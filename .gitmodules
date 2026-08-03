@@ -1,0 +1,4 @@
+[submodule "HST"]
+	path = HST
+	url = https://github.com/icon-lab/HST.git
+	ignore = untracked
