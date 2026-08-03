@@ -1273,6 +1273,28 @@ def test_controller_source_allowlist_rejects_unlisted_local_import(tmp_path: Pat
         _controller_source_paths(project)
 
 
+def test_controller_source_allowlist_covers_runtime_closure_and_manual_gates() -> None:
+    from covid_audio_btp.hst_reliability import _controller_source_paths
+
+    project = Path(__file__).resolve().parents[1]
+    relative = {
+        path.relative_to(project).as_posix()
+        for path in _controller_source_paths(project)
+    }
+
+    assert {
+        "src/covid_audio_btp/config.py",
+        "src/covid_audio_btp/features.py",
+        "src/covid_audio_btp/fusion.py",
+        "src/covid_audio_btp/metadata_baseline.py",
+        "src/covid_audio_btp/metadata_confounding.py",
+        "src/covid_audio_btp/preprocess.py",
+        "src/covid_audio_btp/temporal_holdout.py",
+        "scripts/76_prepare_hst_comparator_approval.py",
+        "scripts/77_prepare_hst_comparator_generation_acceptance.py",
+    }.issubset(relative)
+
+
 def test_controller_publishes_latest_only_after_evidence_pack() -> None:
     script = (
         Path(__file__).resolve().parents[1]

@@ -760,13 +760,20 @@ def _controller_source_paths(project_root: Path) -> tuple[Path, ...]:
         "strong_baseline_protocol.py",
         "compare_is10_rescue.py",
         "compare_is10_final_validation.py",
+        "config.py",
+        "features.py",
+        "fusion.py",
+        "metadata_baseline.py",
+        "metadata_confounding.py",
+        "preprocess.py",
+        "temporal_holdout.py",
     )
     package_root = project_root / "src" / "covid_audio_btp"
     candidates = [
         *sorted(package_root.glob("hst_*.py")),
         *(package_root / name for name in reused_modules),
         *sorted((project_root / "scripts").glob("hst_*.py")),
-        *sorted((project_root / "scripts").glob("7[2-5]_*.py")),
+        *sorted((project_root / "scripts").glob("7[2-7]_*.py")),
     ]
     files = tuple(path.resolve() for path in candidates if path.is_file())
     if not files:
@@ -1119,7 +1126,9 @@ def run_preflight(
     if mode in {"pilot", "full"}:
         project_root = Path(project_root).resolve()
         scientific_config = (
-            pipeline.config.scientific_config if pipeline is not None else {}
+            pipeline.config.scientific_config
+            if pipeline is not None
+            else _read_optional_json(Path(config_path).resolve())
         )
         source = scientific_config.get("source", {})
         paths = scientific_config.get("paths", {})
