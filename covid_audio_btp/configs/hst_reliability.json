@@ -9,7 +9,9 @@
   },
   "paths": {
     "coswara_metadata": "data/processed/metadata_with_quality.csv",
-    "coughvid_metadata": "data/processed/coughvid_metadata_compare_is10_external.csv",
+    "coughvid_metadata": "data/processed/coughvid_metadata_hst_external.csv",
+    "coughvid_cohort_metadata": "data/processed/coughvid_metadata_compare_is10_external.csv",
+    "coughvid_raw_metadata": "data/raw/coughvid/v3_extracted/coughvid_20211012/metadata_compiled.csv",
     "compare_is10_features": "data/processed/features_compare_is10_merged.csv",
     "checkpoint_directory": ".cache/hst/checkpoints"
   },

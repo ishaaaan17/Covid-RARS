@@ -202,6 +202,7 @@ def build_audited_coughvid_index(
     dataset_release_id: str,
     source_manifest_sha256: str,
     require_audio: bool = True,
+    metadata_source_level: str | None = None,
 ) -> pd.DataFrame:
     """Build a COUGHVID index without implicit label-column precedence."""
     raw_source = Path(raw_source)
@@ -265,13 +266,23 @@ def build_audited_coughvid_index(
     )
     indexed["participant_id_is_recording_proxy"] = not identifier_is_subject
     indexed["subject_linkage_available"] = identifier_is_subject
-    indexed["metadata_source_level"] = (
+    inferred_metadata_source_level = (
         "raw_release_archive"
         if zip_names is not None
         else "derived_csv"
         if raw_source.is_file()
         else "raw_release_directory"
     )
+    if metadata_source_level is not None:
+        allowed_override = (
+            raw_source.is_file()
+            and raw_source.suffix.casefold() == ".csv"
+            and metadata_source_level in {"derived_csv", "derived_processed_csv"}
+        )
+        if not allowed_override and metadata_source_level != inferred_metadata_source_level:
+            raise ValueError("Declared COUGHVID metadata source level disagrees with its input type")
+        inferred_metadata_source_level = metadata_source_level
+    indexed["metadata_source_level"] = inferred_metadata_source_level
     indexed["dataset"] = "coughvid"
     indexed["modality"] = "cough"
     indexed["submodality"] = "cough"
@@ -323,7 +334,12 @@ def _label_source_columns(frame: pd.DataFrame) -> list[str]:
     columns: list[str] = []
     for column in frame.columns:
         token = str(column).casefold()
-        if token in {"status", "status_ssl"} or "physician" in token or "expert" in token:
+        if (
+            token in {"status", "status_ssl"}
+            or "diagnosis" in token
+            or "physician" in token
+            or "expert" in token
+        ):
             columns.append(str(column))
     return sorted(columns, key=str.casefold)
 

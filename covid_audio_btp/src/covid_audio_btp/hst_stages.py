@@ -400,29 +400,27 @@ def _coughvid_source_provenance(
         raise ValueError("COUGHVID subject-linkage declaration disagrees with the audited index")
     if str(coughvid_config["identity_source"]) != analysis_unit_type:
         raise ValueError("COUGHVID identity-source declaration disagrees with the analysis unit")
-    return pd.DataFrame(
-        [
-            {
-                "dataset": "coughvid",
-                "cohort_release_id": str(coughvid_config["release_id"]),
-                "source_release_reference": str(
-                    coughvid_config["source_release_reference"]
-                ),
-                "metadata_input_level": metadata_input_level,
-                "raw_release_membership_reconstructed": reconstructed,
-                "identity_source": str(coughvid_config["identity_source"]),
-                "analysis_unit_type": analysis_unit_type,
-                "subject_linkage_available": declared_subject_linkage,
-                "primary_label_column": str(
-                    coughvid_config["primary_label_column"]
-                ),
-                "primary_label_provenance": str(
-                    coughvid_config["primary_label_provenance"]
-                ),
-                "source_manifest_sha256": source_manifest_sha256,
-            }
-        ]
-    )
+    provenance = {
+        "dataset": "coughvid",
+        "cohort_release_id": str(coughvid_config["release_id"]),
+        "source_release_reference": str(
+            coughvid_config["source_release_reference"]
+        ),
+        "metadata_input_level": metadata_input_level,
+        "raw_release_membership_reconstructed": reconstructed,
+        "identity_source": str(coughvid_config["identity_source"]),
+        "analysis_unit_type": analysis_unit_type,
+        "subject_linkage_available": declared_subject_linkage,
+        "primary_label_column": str(coughvid_config["primary_label_column"]),
+        "primary_label_provenance": str(
+            coughvid_config["primary_label_provenance"]
+        ),
+        "source_manifest_sha256": source_manifest_sha256,
+    }
+    for column in ("cohort_source_sha256", "label_metadata_source_sha256"):
+        if column in coughvid:
+            provenance[column] = str(_single_contract_value(coughvid, column))
+    return pd.DataFrame([provenance])
 
 
 def _write_environment_audit(pipeline: HSTPipeline, path: Path) -> str:
@@ -559,6 +557,16 @@ def _data_contracts(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
     release_id = "coswara_project_contract"
     label_columns = "coswara:label_binary"
     coughvid_path = _project_path(config, paths.get("coughvid_metadata", ""))
+    cohort_setting = paths.get("coughvid_cohort_metadata")
+    raw_metadata_setting = paths.get("coughvid_raw_metadata")
+    if (cohort_setting is None) != (raw_metadata_setting is None):
+        raise ValueError("Both COUGHVID upstream metadata paths must be configured together")
+    coughvid_upstream_paths: list[Path] = []
+    if cohort_setting is not None and raw_metadata_setting is not None:
+        coughvid_upstream_paths = [
+            _project_path(config, cohort_setting),
+            _project_path(config, raw_metadata_setting),
+        ]
     coughvid_config = _section(config, "datasets").get("coughvid")
     if not isinstance(coughvid_config, Mapping):
         raise ValueError("COUGHVID dataset configuration is missing")
@@ -569,7 +577,23 @@ def _data_contracts(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
         dataset_release_id=str(coughvid_config.get("release_id", "")),
         source_manifest_sha256=coughvid_source_sha256,
         require_audio=True,
+        metadata_source_level=str(coughvid_config.get("metadata_input_level", "")),
     )
+    expected_upstream_hashes: dict[str, str] = {}
+    if coughvid_upstream_paths:
+        expected_upstream_hashes = {
+            "cohort_source_sha256": stable_file_sha256(
+                coughvid_upstream_paths[0]
+            ),
+            "label_metadata_source_sha256": stable_file_sha256(
+                coughvid_upstream_paths[1]
+            ),
+        }
+    for column, expected_hash in expected_upstream_hashes.items():
+        if str(_single_contract_value(coughvid, column)) != expected_hash:
+            raise ValueError(
+                f"COUGHVID bound metadata does not match upstream source {column!r}"
+            )
     coughvid, coughvid_audit = audit_coughvid_labels(coughvid)
     coughvid["label_provenance"] = str(
         coughvid_config.get("primary_label_provenance", "")
@@ -591,9 +615,16 @@ def _data_contracts(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
     _atomic_csv(coughvid, coughvid_output)
     _atomic_csv(coughvid_audit, coughvid_audit_output)
     _atomic_csv(coughvid_provenance, coughvid_provenance_output)
-    source_paths.append(coughvid_path)
+    source_paths.extend([coughvid_path, *coughvid_upstream_paths])
     label_audits.append(coughvid_audit_output)
     source_hashes["coughvid"] = coughvid_source_sha256
+    if expected_upstream_hashes:
+        source_hashes["coughvid_cohort"] = expected_upstream_hashes[
+            "cohort_source_sha256"
+        ]
+        source_hashes["coughvid_raw_metadata"] = expected_upstream_hashes[
+            "label_metadata_source_sha256"
+        ]
     outputs.extend(
         [coughvid_output, coughvid_audit_output, coughvid_provenance_output]
     )
@@ -604,7 +635,9 @@ def _data_contracts(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
         }
     )
     release_id += "+" + str(coughvid_config.get("release_id", ""))
-    label_columns += ";coughvid:status_SSL"
+    label_columns += ";coughvid:" + str(
+        coughvid_config.get("primary_label_column", "")
+    )
 
     raw_status_config = coughvid_config.get("raw_status_sensitivity")
     if raw_status_config is not None:
@@ -622,6 +655,9 @@ def _data_contracts(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
             dataset_release_id=str(coughvid_config.get("release_id", "")),
             source_manifest_sha256=stable_file_sha256(coughvid_path),
             require_audio=True,
+            metadata_source_level=str(
+                coughvid_config.get("metadata_input_level", "")
+            ),
         )
         raw_status, raw_status_audit = audit_coughvid_labels(
             raw_status,

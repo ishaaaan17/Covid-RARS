@@ -101,6 +101,33 @@ def test_audited_coughvid_csv_preserves_valid_declared_audio_paths(tmp_path: Pat
     assert bool(index.loc[0, "audio_exists"])
 
 
+def test_audited_coughvid_csv_records_declared_processed_source_level(
+    tmp_path: Path,
+) -> None:
+    from covid_audio_btp.hst_data_contracts import build_audited_coughvid_index
+
+    audio = tmp_path / "recording.wav"
+    audio.write_bytes(b"RIFF")
+    metadata = tmp_path / "index.csv"
+    pd.DataFrame(
+        {
+            "uuid": ["recording"],
+            "status_SSL": ["healthy"],
+            "audio_path": [audio.as_posix()],
+        }
+    ).to_csv(metadata, index=False)
+
+    index = build_audited_coughvid_index(
+        metadata,
+        label_column="status_SSL",
+        dataset_release_id="coughvid-v3-7024894",
+        source_manifest_sha256="b" * 64,
+        metadata_source_level="derived_processed_csv",
+    )
+
+    assert index["metadata_source_level"].eq("derived_processed_csv").all()
+
+
 def test_hst_contract_does_not_depend_on_legacy_coughvid_adapter() -> None:
     source = (
         Path(__file__).parents[1] / "src" / "covid_audio_btp" / "hst_data_contracts.py"
@@ -283,3 +310,27 @@ def test_audit_reports_prior_supervised_label_changes() -> None:
     prior_row = audit.loc[audit["audit_type"] == "prior_comparison"].iloc[0]
     assert prior_row["changed_supervised_labels"] == 1
     assert bool(prior_row["invalidates_prior_metrics"])
+
+
+def test_coughvid_label_audit_includes_expert_diagnosis_columns() -> None:
+    from covid_audio_btp.hst_data_contracts import audit_coughvid_labels
+
+    frame = pd.DataFrame(
+        {
+            "status_SSL": ["COVID-19", "healthy"],
+            "diagnosis_1": ["COVID-19", "healthy_cough"],
+            "label_source": ["status_SSL", "status_SSL"],
+        }
+    )
+
+    _normalized, audit = audit_coughvid_labels(frame)
+
+    assert "diagnosis_1" in set(audit.get("label_source", pd.Series(dtype=str)).dropna())
+    pairwise = audit.loc[audit["audit_type"].eq("pairwise")]
+    assert (
+        pairwise[["left_label_source", "right_label_source"]]
+        .astype(str)
+        .eq("diagnosis_1")
+        .any(axis=1)
+        .any()
+    )

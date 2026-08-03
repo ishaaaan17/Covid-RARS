@@ -1292,6 +1292,7 @@ def test_controller_source_allowlist_covers_runtime_closure_and_manual_gates() -
         "src/covid_audio_btp/temporal_holdout.py",
         "scripts/76_prepare_hst_comparator_approval.py",
         "scripts/77_prepare_hst_comparator_generation_acceptance.py",
+        "scripts/78_prepare_hst_coughvid_metadata.py",
     }.issubset(relative)
 
 

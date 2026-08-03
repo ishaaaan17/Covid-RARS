@@ -38,16 +38,21 @@ held-out test set cannot be used as a stopping rule.
 - Coswara uses the contributor as the analysis unit. Every Coswara participant
   and recording key is dataset-qualified, and a participant cannot occur in
   more than one split in a protocol/fold.
-- The COUGHVID input is a checksum-pinned processed cohort CSV derived from
-  COUGHVID-v3, not a row-by-row reconstruction from the raw release. Its UUID is
-  a recording identifier. Because the input provides no verified contributor
-  linkage, the external analysis unit is the recording UUID; the compatibility
-  `participant_key` is explicitly marked as a recording proxy.
+- COUGHVID membership is fixed by the checksum-pinned processed external cohort.
+  A fail-closed prerequisite joins that cohort one-to-one to the released
+  COUGHVID-v3 `metadata_compiled.csv` by processed `participant_id` = released
+  `uuid`, verifies every legacy binary label against `status_SSL`, and records
+  both upstream SHA-256 values. It does not expand the cohort to other release
+  rows. The UUID is a recording identifier; because no verified contributor
+  linkage is available, the external analysis unit is the recording UUID and
+  the compatibility `participant_key` is marked as a recording proxy.
 - Duplicate audio content hashes cannot cross split boundaries.
-- COUGHVID primary labels are the explicitly selected `status_SSL` field. Raw
-  `status` labels are evaluated only by relabeling the same frozen external
-  probabilities and reusing each source-validation threshold. They are never
-  an implicit fallback or a source of model, checkpoint, or threshold choices.
+- COUGHVID primary labels are the explicitly selected released `status_SSL`
+  field. Raw `status` and available expert `diagnosis_*` fields are retained for
+  label-source auditing; `status` is also evaluated by relabeling the same frozen
+  external probabilities and reusing each source-validation threshold. They are
+  never an implicit fallback or a source of model, checkpoint, or threshold
+  choices.
 - `status_SSL` is a semi-supervised COUGHVID label, not RT-PCR-confirmed clinical
   ground truth. The external endpoint is therefore a transportability and label-
   agreement analysis, not clinical validation against a diagnostic reference.

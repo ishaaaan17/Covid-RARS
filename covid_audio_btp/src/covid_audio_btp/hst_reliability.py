@@ -773,7 +773,7 @@ def _controller_source_paths(project_root: Path) -> tuple[Path, ...]:
         *sorted(package_root.glob("hst_*.py")),
         *(package_root / name for name in reused_modules),
         *sorted((project_root / "scripts").glob("hst_*.py")),
-        *sorted((project_root / "scripts").glob("7[2-7]_*.py")),
+        *sorted((project_root / "scripts").glob("7[2-8]_*.py")),
     ]
     files = tuple(path.resolve() for path in candidates if path.is_file())
     if not files:
@@ -1056,6 +1056,16 @@ def load_controller_config(
                         modality=modality_filter,
                     )
                 )
+        for input_name in (
+            "coughvid_cohort_metadata",
+            "coughvid_raw_metadata",
+        ):
+            supplied = paths_config.get(input_name)
+            if supplied is None:
+                continue
+            input_path = (project_root / str(supplied)).resolve()
+            if input_path.is_file():
+                input_hashes[input_name] = stable_file_sha256(input_path)
     configured_inputs = accepted_document.get("input_hashes", {})
     if isinstance(configured_inputs, Mapping):
         for key, value in configured_inputs.items():
@@ -1165,6 +1175,17 @@ def run_preflight(
                 )
             ).resolve(),
         ]
+        cohort_setting = paths.get("coughvid_cohort_metadata")
+        raw_metadata_setting = paths.get("coughvid_raw_metadata")
+        if (cohort_setting is None) != (raw_metadata_setting is None):
+            errors.append("both COUGHVID upstream metadata paths must be configured together")
+        elif cohort_setting is not None and raw_metadata_setting is not None:
+            required_paths.extend(
+                [
+                    (project_root / str(cohort_setting)).resolve(),
+                    (project_root / str(raw_metadata_setting)).resolve(),
+                ]
+            )
         if mode == "full":
             comparator_path = (
                 project_root
@@ -1284,10 +1305,28 @@ def prepare_hst_prerequisites(
                 "sha256": stable_file_sha256(resolved),
             }
         )
+    from .hst_coughvid_metadata import build_hst_coughvid_metadata
+
+    coughvid_metadata_result: dict[str, object] | None = None
+    configured_coughvid = paths.get("coughvid_metadata")
+    configured_cohort = paths.get("coughvid_cohort_metadata")
+    configured_raw = paths.get("coughvid_raw_metadata")
+    configured_binding = (configured_coughvid, configured_cohort, configured_raw)
+    if any(value is not None for value in configured_binding) and not all(
+        value is not None for value in configured_binding
+    ):
+        raise ValueError("All HST COUGHVID metadata-binding paths must be configured together")
+    if all(value is not None for value in configured_binding):
+        coughvid_metadata_result = build_hst_coughvid_metadata(
+            cohort_path=project_root / str(configured_cohort),
+            raw_metadata_path=project_root / str(configured_raw),
+            output_path=project_root / str(configured_coughvid),
+        )
     return {
         "schema_version": 1,
         "hst_commit": verified_commit,
         "checkpoints": rows,
+        "coughvid_metadata": coughvid_metadata_result,
         "status": "ready",
     }
 

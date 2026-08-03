@@ -46,7 +46,11 @@ python -m pytest tests/test_hst_*.py -q -W error
 `prepare_hst_prerequisites` initializes and verifies the pinned HST source and
 downloads both official ImageNet initialization files to
 `covid_audio_btp/.cache/hst/checkpoints`, the same directory used by production
-preflight and the checkpoint tests. A fresh checkout must not place or copy
+preflight and the checkpoint tests. It also creates the HST COUGHVID metadata
+input by joining the fixed processed cohort one-to-one to released v3 metadata
+on UUID. The prerequisite fails if a UUID is missing, duplicated, has no
+`status_SSL`, or disagrees with the cohort's legacy binary label, and records
+the SHA-256 of both source tables. A fresh checkout must not place or copy
 checkpoint files into `HST/model/imagenet_weights`; that submodule path is not a
 tracked checkpoint store.
 
