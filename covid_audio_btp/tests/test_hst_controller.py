@@ -1436,7 +1436,6 @@ def test_spectrogram_stage_receipt_is_not_reusable_after_shared_tensor_corruptio
     import numpy as np
     from covid_audio_btp.hst_reliability import HSTPipeline, HSTPipelineConfig
     from covid_audio_btp.hst_runtime import canonical_json_sha256, stable_file_sha256
-    from covid_audio_btp.hst_spectrograms import _tensor_sha256
 
     config = HSTPipelineConfig.smoke(tmp_path, device="cpu")
     pipeline = HSTPipeline(config)
@@ -1452,7 +1451,7 @@ def test_spectrogram_stage_receipt_is_not_reusable_after_shared_tensor_corruptio
             "recording_key": ["coswara::r1"],
             "eligible": [True],
             "cache_path": [tensor_path.as_posix()],
-            "tensor_sha256": [_tensor_sha256(image)],
+            "tensor_sha256": [stable_file_sha256(tensor_path)],
         }
     ).to_csv(index_path, index=False)
     relative = index_path.relative_to(pipeline.run_root).as_posix()
