@@ -294,6 +294,12 @@ def test_load_verified_model_reinitializes_only_head() -> None:
     assert audit["head_reinitialized"] is True
     assert audit["architecture"] == expected_base_architecture()
     assert audit["backbone_parameter_count"] == expected_backbone_parameter_count()
+    assert audit["checkpoint_element_count_without_head"] == 49_173_398
+    assert (
+        audit["checkpoint_element_count_without_head"]
+        - audit["backbone_parameter_count"]
+        == 336_140
+    )
     logits = model(torch.zeros(2, 3, 224, 224))
     assert tuple(logits.shape) == (2, 2)
     assert torch.isfinite(logits).all()

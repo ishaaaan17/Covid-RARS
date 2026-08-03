@@ -64,8 +64,8 @@ CHECKPOINTS = {
 }
 
 EXPECTED_BACKBONE_PARAMETERS = {
-    "hst_small": 27_769_058,
-    "hst_base": 49_173_398,
+    "hst_small": 27_519_354,
+    "hst_base": 48_837_258,
 }
 
 

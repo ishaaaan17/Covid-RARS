@@ -28,7 +28,7 @@ def expected_base_architecture() -> dict[str, object]:
 
 
 def expected_backbone_parameter_count() -> int:
-    return 49_173_398
+    return 48_837_258
 
 
 def official_hst_paths() -> tuple[Path, Path]:
