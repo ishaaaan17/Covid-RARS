@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 
 
-PREPROCESSING_IMPLEMENTATION_VERSION = "hst-spectrogram-preprocessing-v2"
+PREPROCESSING_IMPLEMENTATION_VERSION = "hst-spectrogram-preprocessing-v3"
 
 from covid_audio_btp.audio_io import local_audio_path, split_archive_member_path
 from covid_audio_btp.hst_runtime import (
@@ -441,7 +441,7 @@ def _atomic_json(path: Path, value: object) -> None:
 def _atomic_array(path: Path, array: np.ndarray) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
-    expected_hash = _tensor_sha256(array)
+    expected_payload_hash = _tensor_sha256(array)
     try:
         with temporary.open("wb") as handle:
             np.save(handle, np.ascontiguousarray(array, dtype=np.float32), allow_pickle=False)
@@ -450,13 +450,14 @@ def _atomic_array(path: Path, array: np.ndarray) -> str:
         reloaded = np.load(temporary, allow_pickle=False)
         if reloaded.shape != array.shape or reloaded.dtype != np.float32 or not np.isfinite(reloaded).all():
             raise ValueError("Temporary HST cache tensor failed validation")
-        if _tensor_sha256(reloaded) != expected_hash:
+        if _tensor_sha256(reloaded) != expected_payload_hash:
             raise ValueError("Temporary HST cache tensor checksum mismatch")
+        artifact_hash = _sha256_file(temporary)
         os.replace(temporary, path)
     finally:
         if temporary.exists():
             temporary.unlink()
-    return expected_hash
+    return artifact_hash
 
 
 class _PreprocessingClaim:
@@ -762,7 +763,9 @@ def build_hst_spectrogram_cache(
                     and cached.shape == (config.image_size, config.image_size)
                     and cached.dtype == np.float32
                     and np.isfinite(cached).all()
-                    and fragment.get("tensor_sha256") == _tensor_sha256(cached)
+                    and fragment.get("tensor_sha256") == _sha256_file(tensor_path)
+                    and fragment.get("tensor_payload_sha256")
+                    == _tensor_sha256(cached)
                 )
                 if valid:
                     refreshed = {
@@ -807,6 +810,11 @@ def build_hst_spectrogram_cache(
                     "decode_attempt": 1,
                     "cache_path": tensor_path.as_posix() if result.eligible else "",
                     "tensor_sha256": tensor_hash,
+                    "tensor_payload_sha256": (
+                        _tensor_sha256(result.image)
+                        if result.eligible and result.image is not None
+                        else ""
+                    ),
                     "preprocessing_hash": config_hash,
                     "preprocessing_implementation_version": (
                         PREPROCESSING_IMPLEMENTATION_VERSION
@@ -845,7 +853,7 @@ def validate_hst_cache_index(index_path: Path, *, cache_root: Path) -> int:
         array = np.load(tensor_path, allow_pickle=False)
         if array.ndim != 2 or array.dtype != np.float32 or not np.isfinite(array).all():
             raise ValueError(f"HST cache tensor failed shape/dtype/finite checks: {tensor_path}")
-        if _tensor_sha256(array) != str(row.tensor_sha256):
+        if _sha256_file(tensor_path) != str(row.tensor_sha256):
             raise ValueError(f"HST cache tensor checksum mismatch: {tensor_path}")
     return len(eligible)
 

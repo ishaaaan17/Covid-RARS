@@ -51,6 +51,8 @@ held-out test set cannot be used as a stopping rule.
   an explicit preprocessing-implementation version. Recordings shorter than the
   silence-trimming frame are excluded by the unchanged duration threshold; they
   are never padded to make trimming or model ingestion succeed.
+- Each cached tensor records the SHA-256 of the complete `.npy` artifact used by
+  the training loader and a separate SHA-256 of its canonical float32 payload.
 - COUGHVID primary labels are the explicitly selected released `status_SSL`
   field. Raw `status` and available expert `diagnosis_*` fields are retained for
   label-source auditing; `status` is also evaluated by relabeling the same frozen

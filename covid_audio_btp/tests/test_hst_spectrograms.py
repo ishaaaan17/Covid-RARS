@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -141,6 +142,7 @@ def test_cache_records_source_and_tensor_hashes(tmp_path: Path) -> None:
     assert output.loc[0, "eligible"]
     assert len(output.loc[0, "source_sha256"]) == 64
     assert len(output.loc[0, "tensor_sha256"]) == 64
+    assert len(output.loc[0, "tensor_payload_sha256"]) == 64
     assert output.loc[0, "representation_id"] == "paper_logmel_224"
     assert output.loc[0, "recording_timestamp"] == "2020-04-01T12:00:00Z"
     assert output.loc[0, "cough_symptom"] == "yes"
@@ -149,6 +151,12 @@ def test_cache_records_source_and_tensor_hashes(tmp_path: Path) -> None:
     array = np.load(output.loc[0, "cache_path"], allow_pickle=False)
     assert array.shape == (224, 224)
     assert array.dtype == np.float32
+    from covid_audio_btp.hst_training import load_verified_cached_image
+
+    loaded = load_verified_cached_image(
+        Path(output.loc[0, "cache_path"]), output.loc[0, "tensor_sha256"]
+    )
+    assert np.array_equal(loaded, array)
     cached_again = build_hst_spectrogram_cache(
         metadata,
         output_dir=tmp_path / "cache",
@@ -158,7 +166,7 @@ def test_cache_records_source_and_tensor_hashes(tmp_path: Path) -> None:
     assert cached_again.loc[0, "representation_id"] == "paper_logmel_224"
     assert (
         cached_again.loc[0, "preprocessing_implementation_version"]
-        == "hst-spectrogram-preprocessing-v2"
+        == "hst-spectrogram-preprocessing-v3"
     )
 
 
@@ -271,10 +279,7 @@ def test_audio_source_snapshot_keeps_hashed_bytes_stable_after_path_replacement(
 
 
 def test_cache_index_verification_rejects_missing_or_corrupt_tensor(tmp_path: Path) -> None:
-    from covid_audio_btp.hst_spectrograms import (
-        _tensor_sha256,
-        validate_hst_cache_index,
-    )
+    from covid_audio_btp.hst_spectrograms import validate_hst_cache_index
 
     cache_root = tmp_path / "cache"
     tensor_path = cache_root / "config" / "tensors" / "one.npy"
@@ -286,7 +291,7 @@ def test_cache_index_verification_rejects_missing_or_corrupt_tensor(tmp_path: Pa
             "recording_key": ["coswara::r1"],
             "eligible": [True],
             "cache_path": [tensor_path.as_posix()],
-            "tensor_sha256": [_tensor_sha256(image)],
+            "tensor_sha256": [hashlib.sha256(tensor_path.read_bytes()).hexdigest()],
         }
     )
     index_path = tmp_path / "cache_index.csv"
