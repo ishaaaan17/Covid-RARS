@@ -17,6 +17,9 @@ from typing import Any, Callable, Iterator, Mapping
 import numpy as np
 import pandas as pd
 
+
+PREPROCESSING_IMPLEMENTATION_VERSION = "hst-spectrogram-preprocessing-v2"
+
 from covid_audio_btp.audio_io import local_audio_path, split_archive_member_path
 from covid_audio_btp.hst_runtime import (
     ProcessIdentity,
@@ -155,7 +158,11 @@ def _canonical_json(value: object) -> bytes:
 
 
 def preprocessing_hash(config: HSTSpectrogramConfig) -> str:
-    return hashlib.sha256(_canonical_json(asdict(config))).hexdigest()
+    payload = {
+        "implementation_version": PREPROCESSING_IMPLEMENTATION_VERSION,
+        "config": asdict(config),
+    }
+    return hashlib.sha256(_canonical_json(payload)).hexdigest()
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -205,12 +212,18 @@ def _prepare_waveform(y: np.ndarray, sr: int, config: HSTSpectrogramConfig) -> t
             fix=True,
             scale=False,
         ).astype(np.float32, copy=False)
-    trimmed, _ = librosa.effects.trim(
-        waveform,
-        top_db=config.trim_top_db,
-        frame_length=config.trim_frame_length,
-        hop_length=config.trim_hop_length,
-    )
+    if waveform.size < config.trim_frame_length:
+        # Such recordings are necessarily below the frozen two-second threshold.
+        # Preserve their actual duration so the caller can exclude them without
+        # padding or invoking librosa with an invalid frame size.
+        trimmed = waveform
+    else:
+        trimmed, _ = librosa.effects.trim(
+            waveform,
+            top_db=config.trim_top_db,
+            frame_length=config.trim_frame_length,
+            hop_length=config.trim_hop_length,
+        )
     trimmed = np.asarray(trimmed, dtype=np.float32)
     return trimmed, original_duration, float(trimmed.size / config.sample_rate)
 
@@ -743,6 +756,8 @@ def build_hst_spectrogram_cache(
                 valid = (
                     fragment.get("source_sha256") == source_hash
                     and fragment.get("preprocessing_hash") == config_hash
+                    and fragment.get("preprocessing_implementation_version")
+                    == PREPROCESSING_IMPLEMENTATION_VERSION
                     and fragment.get("representation_id") == config.representation_id
                     and cached.shape == (config.image_size, config.image_size)
                     and cached.dtype == np.float32
@@ -793,6 +808,9 @@ def build_hst_spectrogram_cache(
                     "cache_path": tensor_path.as_posix() if result.eligible else "",
                     "tensor_sha256": tensor_hash,
                     "preprocessing_hash": config_hash,
+                    "preprocessing_implementation_version": (
+                        PREPROCESSING_IMPLEMENTATION_VERSION
+                    ),
                     "representation_id": config.representation_id,
                     "cache_status": "written" if result.eligible else "excluded",
                 }

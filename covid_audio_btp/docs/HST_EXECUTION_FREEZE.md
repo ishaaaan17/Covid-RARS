@@ -47,6 +47,10 @@ held-out test set cannot be used as a stopping rule.
   linkage is available, the external analysis unit is the recording UUID and
   the compatibility `participant_key` is marked as a recording proxy.
 - Duplicate audio content hashes cannot cross split boundaries.
+- Spectrogram-cache identity includes both the frozen preprocessing settings and
+  an explicit preprocessing-implementation version. Recordings shorter than the
+  silence-trimming frame are excluded by the unchanged duration threshold; they
+  are never padded to make trimming or model ingestion succeed.
 - COUGHVID primary labels are the explicitly selected released `status_SSL`
   field. Raw `status` and available expert `diagnosis_*` fields are retained for
   label-source auditing; `status` is also evaluated by relabeling the same frozen

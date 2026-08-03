@@ -54,6 +54,10 @@ the SHA-256 of both source tables. A fresh checkout must not place or copy
 checkpoint files into `HST/model/imagenet_weights`; that submodule path is not a
 tracked checkpoint store.
 
+The shared spectrogram cache is versioned by preprocessing settings and the
+preprocessing implementation. A code revision that changes preprocessing must
+bump that implementation version rather than reuse an unversioned cache.
+
 The frozen runtime setting is `max_concurrent_gpu_jobs: 1`. Do not launch a
 second GPU job while the HST controller is active. CPU-only inspection is safe,
 but comparator fitting is serialized by the pipeline and should not be started

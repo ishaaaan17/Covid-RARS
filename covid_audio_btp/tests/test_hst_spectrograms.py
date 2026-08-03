@@ -61,6 +61,24 @@ def test_post_trim_audio_must_be_strictly_longer_than_two_seconds() -> None:
         assert result.reason == "post_trim_duration_not_above_2_seconds"
 
 
+def test_waveform_shorter_than_trim_frame_is_excluded_without_padding() -> None:
+    from covid_audio_btp.hst_spectrograms import HSTSpectrogramConfig, preprocess_recording
+
+    config = HSTSpectrogramConfig.paper_default()
+    waveform = np.ones(config.trim_frame_length - 1, dtype=np.float32)
+
+    result = preprocess_recording(waveform, config.sample_rate, config)
+
+    assert result.eligible is False
+    assert result.reason == "post_trim_duration_not_above_2_seconds"
+    assert result.original_duration_seconds == pytest.approx(
+        waveform.size / config.sample_rate
+    )
+    assert result.trimmed_duration_seconds == pytest.approx(
+        waveform.size / config.sample_rate
+    )
+
+
 def test_frequency_orientation_and_configuration_hash_are_frozen() -> None:
     from covid_audio_btp.hst_spectrograms import HSTSpectrogramConfig, preprocessing_hash, waveform_to_hst_image
 
@@ -138,6 +156,10 @@ def test_cache_records_source_and_tensor_hashes(tmp_path: Path) -> None:
     )
     assert cached_again.loc[0, "cache_status"] == "verified_hit"
     assert cached_again.loc[0, "representation_id"] == "paper_logmel_224"
+    assert (
+        cached_again.loc[0, "preprocessing_implementation_version"]
+        == "hst-spectrogram-preprocessing-v2"
+    )
 
 
 def test_cache_rejects_audio_bytes_that_do_not_match_frozen_source_hash(
