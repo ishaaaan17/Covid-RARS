@@ -1,5 +1,9 @@
 -r requirements.txt
 -r requirements-gpu.txt
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.11.0+cu128; platform_system == "Linux"
+torchvision==0.26.0+cu128; platform_system == "Linux"
+torchaudio==2.11.0+cu128; platform_system == "Linux"
 timm==0.9.16
 ml-collections==1.1.0
 threadpoolctl==3.6.0

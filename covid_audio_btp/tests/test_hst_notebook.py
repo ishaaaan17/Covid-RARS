@@ -283,3 +283,13 @@ def test_ubuntu_runbook_documents_gates_resume_and_non_guaranteed_targets() -> N
     assert "full SHA-256 agrees with the receipt" in normalized
     assert "modification time, and change time" in normalized
     assert "not a cryptographic authentication claim" in normalized
+
+
+def test_hst_requirements_pin_the_linux_cuda_abi_stack() -> None:
+    root = Path(__file__).resolve().parents[1]
+    requirements = (root / "requirements-hst.txt").read_text(encoding="ascii")
+
+    assert "--extra-index-url https://download.pytorch.org/whl/cu128" in requirements
+    assert 'torch==2.11.0+cu128; platform_system == "Linux"' in requirements
+    assert 'torchvision==0.26.0+cu128; platform_system == "Linux"' in requirements
+    assert 'torchaudio==2.11.0+cu128; platform_system == "Linux"' in requirements
