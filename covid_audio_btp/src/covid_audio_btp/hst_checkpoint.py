@@ -247,7 +247,17 @@ def load_verified_hst_model(
 
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(int(seed))
-        model = official.HSTModel(**architecture)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=(
+                    r"torch\.meshgrid: in an upcoming release, it will be required "
+                    r"to pass the indexing argument\..*"
+                ),
+                category=UserWarning,
+                module=r"torch\.functional",
+            )
+            model = official.HSTModel(**architecture)
 
     raw = torch.load(Path(checkpoint_path), map_location="cpu", weights_only=True)
     state = _unwrap_state_dict(raw)
