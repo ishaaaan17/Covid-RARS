@@ -18,7 +18,8 @@ held-out test set cannot be used as a stopping rule.
 - HST repository: `https://github.com/icon-lab/HST.git`
 - Source commit: `7f94ad81e392da856c7aac6d364d036c28e26c32`
 - Official model source SHA-256:
-  `44c1688afb00ee3f7632577d011ca3857200d042818bc2ac28b3b8d18288479f`
+  `5f9503df584d3a427722e0de5e1d52d1bbb79933f337181b7eeb65fcf9d2cc8f`
+  (computed from the pinned Git blob, independent of checkout line endings)
 - HST-Small ImageNet checkpoint SHA-256:
   `e7086d1b87d598120296b9a1b5f094c7587cb06f50bf609a4ca13badc95e3112`
 - HST-Base ImageNet checkpoint SHA-256:

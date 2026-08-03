@@ -13,7 +13,7 @@ from typing import Any
 
 PINNED_HST_COMMIT = "7f94ad81e392da856c7aac6d364d036c28e26c32"
 EXPECTED_HST_MODEL_SOURCE_SHA256 = (
-    "44c1688afb00ee3f7632577d011ca3857200d042818bc2ac28b3b8d18288479f"
+    "5f9503df584d3a427722e0de5e1d52d1bbb79933f337181b7eeb65fcf9d2cc8f"
 )
 
 ARCHITECTURES: dict[str, dict[str, object]] = {
@@ -88,6 +88,16 @@ def _is_regular_file(path: Path) -> bool:
         return False
 
 
+def hst_model_source_sha256(hst_repo: Path, commit: str) -> str:
+    """Hash the committed HST model blob, independent of checkout line endings."""
+    result = subprocess.run(
+        ["git", "-C", str(Path(hst_repo)), "show", f"{commit}:model/hst_model.py"],
+        check=True,
+        capture_output=True,
+    )
+    return hashlib.sha256(result.stdout).hexdigest()
+
+
 def verify_file(path: Path, *, expected_size: int, expected_sha256: str) -> None:
     path = Path(path)
     if not _is_regular_file(path):
@@ -122,7 +132,7 @@ def verify_hst_source(hst_repo: Path, expected_commit: str) -> str:
     )
     if tracked_diff.returncode != 0:
         raise ValueError("Official HST model source has tracked modifications")
-    source_hash = sha256_file(model_source)
+    source_hash = hst_model_source_sha256(hst_repo, actual_commit)
     if source_hash != EXPECTED_HST_MODEL_SOURCE_SHA256:
         raise ValueError(
             "Official HST model source SHA-256 mismatch: "

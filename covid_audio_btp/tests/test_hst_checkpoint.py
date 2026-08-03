@@ -200,8 +200,40 @@ def test_official_model_source_hash_is_pinned() -> None:
     from covid_audio_btp.hst_checkpoint import EXPECTED_HST_MODEL_SOURCE_SHA256
 
     assert EXPECTED_HST_MODEL_SOURCE_SHA256 == (
-        "44c1688afb00ee3f7632577d011ca3857200d042818bc2ac28b3b8d18288479f"
+        "5f9503df584d3a427722e0de5e1d52d1bbb79933f337181b7eeb65fcf9d2cc8f"
     )
+
+
+def test_committed_source_hash_is_independent_of_checkout_line_endings(
+    tmp_path: Path,
+) -> None:
+    import subprocess
+
+    from covid_audio_btp.hst_checkpoint import hst_model_source_sha256
+
+    repo = tmp_path / "hst"
+    source = repo / "model" / "hst_model.py"
+    source.parent.mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "user.name", "Test"], check=True)
+    subprocess.run(
+        ["git", "-C", str(repo), "config", "user.email", "test@example.invalid"],
+        check=True,
+    )
+    source.write_bytes(b"class HSTModel:\n    pass\n")
+    subprocess.run(["git", "-C", str(repo), "add", "model/hst_model.py"], check=True)
+    subprocess.run(["git", "-C", str(repo), "commit", "-qm", "fixture"], check=True)
+    commit = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+    expected = hst_model_source_sha256(repo, commit)
+    source.write_bytes(b"class HSTModel:\r\n    pass\r\n")
+
+    assert hst_model_source_sha256(repo, commit) == expected
 
 
 def test_official_checkpoint_files_match_frozen_hashes() -> None:

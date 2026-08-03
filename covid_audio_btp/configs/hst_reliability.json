@@ -4,7 +4,7 @@
     "repository": "https://github.com/icon-lab/HST.git",
     "path": "../HST",
     "commit": "7f94ad81e392da856c7aac6d364d036c28e26c32",
-    "model_source_sha256": "44c1688afb00ee3f7632577d011ca3857200d042818bc2ac28b3b8d18288479f",
+    "model_source_sha256": "5f9503df584d3a427722e0de5e1d52d1bbb79933f337181b7eeb65fcf9d2cc8f",
     "paper_doi": "10.1109/JBHI.2023.3339700"
   },
   "paths": {

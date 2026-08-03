@@ -16,7 +16,12 @@ from typing import Callable, Mapping
 import numpy as np
 import pandas as pd
 
-from .hst_checkpoint import load_verified_hst_model, verify_file, verify_hst_source
+from .hst_checkpoint import (
+    hst_model_source_sha256,
+    load_verified_hst_model,
+    verify_file,
+    verify_hst_source,
+)
 from . import hst_fusion as _fusion_contract
 from . import hst_protocols as _protocol_contract
 from .hst_comparators import (
@@ -464,9 +469,8 @@ def _preflight(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
     source = _section(config, "source")
     hst_root = _source_path(config)
     commit = verify_hst_source(hst_root, str(source.get("commit", "")))
-    model_source = hst_root / "model" / "hst_model.py"
     expected_source_hash = str(source.get("model_source_sha256", ""))
-    if stable_file_sha256(model_source) != expected_source_hash:
+    if hst_model_source_sha256(hst_root, commit) != expected_source_hash:
         raise ValueError("Official HST model source checksum does not match the freeze")
     required_inputs: list[Path] = []
     paths = _section(config, "paths")
@@ -1682,7 +1686,6 @@ def _base_resource_pilot(
     )
     runtime_policy_hash = canonical_json_sha256(runtime_policy)
     checkpoint_path = _checkpoint_path(pipeline.config, "hst_base_imagenet")
-    model_source_path = _source_path(pipeline.config) / "model" / "hst_model.py"
     benchmark, selection = run_base_resource_pilot_trials(
         cache_index_path=cache_path,
         manifest_path=manifest_path,
@@ -1697,7 +1700,9 @@ def _base_resource_pilot(
         freeze_context={
             "model_name": "hst_base",
             "hst_commit": pipeline.config.hst_commit,
-            "model_source_sha256": stable_file_sha256(model_source_path),
+            "model_source_sha256": hst_model_source_sha256(
+                _source_path(pipeline.config), pipeline.config.hst_commit
+            ),
             "checkpoint_sha256": stable_file_sha256(checkpoint_path),
             "data_contracts_freeze_hash": _data_contract_freeze_hash(pipeline),
             "dependency_lock_sha256": stable_file_sha256(
