@@ -6,6 +6,7 @@ import os
 import stat
 import subprocess
 import uuid
+import warnings
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -196,7 +197,17 @@ def _load_official_module(hst_repo: Path) -> ModuleType:
     if spec is None or spec.loader is None:
         raise ImportError(f"Could not import official HST source from {source_path}")
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=(
+                r"Importing from timm\.models\.layers is deprecated, "
+                r"please import via timm\.layers"
+            ),
+            category=DeprecationWarning,
+            module=r"timm\.models\.layers",
+        )
+        spec.loader.exec_module(module)
     return module
 
 

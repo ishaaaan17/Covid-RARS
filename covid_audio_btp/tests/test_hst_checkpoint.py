@@ -236,6 +236,24 @@ def test_committed_source_hash_is_independent_of_checkout_line_endings(
     assert hst_model_source_sha256(repo, commit) == expected
 
 
+def test_official_module_adapter_does_not_hide_unrelated_deprecations(
+    tmp_path: Path,
+) -> None:
+    from covid_audio_btp.hst_checkpoint import _load_official_module
+
+    source = tmp_path / "model" / "hst_model.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "import warnings\n"
+        "warnings.warn('unrelated deprecation', DeprecationWarning)\n"
+        "class HSTModel: pass\n",
+        encoding="utf-8",
+    )
+
+    with pytest.warns(DeprecationWarning, match="unrelated deprecation"):
+        _load_official_module(tmp_path)
+
+
 def test_official_checkpoint_files_match_frozen_hashes() -> None:
     from covid_audio_btp.hst_checkpoint import verify_file
 
