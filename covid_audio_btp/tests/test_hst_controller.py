@@ -348,12 +348,15 @@ def test_detached_parent_writes_intent_before_spawn_then_publishes_child_identit
     class FakeProcess:
         pid = 4321
 
-    def fake_popen(*_args: object, **_kwargs: object) -> FakeProcess:
+    def fake_popen(*_args: object, **kwargs: object) -> FakeProcess:
         receipts = list((project / "reports" / "hst" / "launches").glob("*.json"))
         assert len(receipts) == 1
         intent = json.loads(receipts[0].read_text(encoding="utf-8"))
         assert intent["status"] == "initializing"
         assert intent["pid"] is None
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        assert environment["CUBLAS_WORKSPACE_CONFIG"] == ":4096:8"
         return FakeProcess()
 
     monkeypatch.setattr(reliability.subprocess, "Popen", fake_popen)
@@ -371,7 +374,7 @@ def test_detached_parent_writes_intent_before_spawn_then_publishes_child_identit
         config_path=config_path,
         project_root=project,
         mode="smoke",
-        device="cpu",
+        device="cuda",
         through="preflight",
         accepted_freezes_path=project / "reports" / "hst" / "accepted_freezes.json",
     )
@@ -388,6 +391,9 @@ def test_detached_parent_writes_intent_before_spawn_then_publishes_child_identit
     assert launched["status"] == "launching"
     assert persisted["status"] == "launching"
     assert persisted["pid"] == 4321
+    assert persisted["determinism_environment"] == {
+        "CUBLAS_WORKSPACE_CONFIG": ":4096:8"
+    }
     assert persisted["process_start_identity"] == "test-start-identity"
 
 

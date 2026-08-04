@@ -78,10 +78,25 @@ _IN_PROCESS_CUDA_STAGES = frozenset(
         "gradcam",
     }
 )
+_CUDA_DETERMINISTIC_WORKSPACE = ":4096:8"
 
 
 class StageExecutionError(RuntimeError):
     """Raised after a failed stage has been durably recorded."""
+
+
+def hst_process_environment(
+    *,
+    device: str,
+    base_environment: Mapping[str, str] | None = None,
+) -> dict[str, str]:
+    """Return the canonical process environment for an HST controller run."""
+    if device not in {"cpu", "cuda"}:
+        raise ValueError("device must be cpu or cuda")
+    environment = dict(os.environ if base_environment is None else base_environment)
+    if device == "cuda":
+        environment["CUBLAS_WORKSPACE_CONFIG"] = _CUDA_DETERMINISTIC_WORKSPACE
+    return environment
 
 
 def _utc_now() -> str:
@@ -1508,6 +1523,11 @@ def launch_detached_run(
         "error": None,
         "updated_at": launched_at,
         "updated_at_unix": launched_at_unix,
+        "determinism_environment": {
+            "CUBLAS_WORKSPACE_CONFIG": (
+                _CUDA_DETERMINISTIC_WORKSPACE if device == "cuda" else None
+            )
+        },
     }
     atomic_write_json(receipt_path, intent)
     process: subprocess.Popen[bytes] | None = None
@@ -1518,6 +1538,7 @@ def launch_detached_run(
                 "stdin": subprocess.DEVNULL,
                 "stdout": log_handle,
                 "stderr": subprocess.STDOUT,
+                "env": hst_process_environment(device=device),
             }
             if os.name == "posix":
                 options["start_new_session"] = True

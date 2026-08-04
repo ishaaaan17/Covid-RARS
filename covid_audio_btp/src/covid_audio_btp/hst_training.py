@@ -1526,7 +1526,7 @@ def _configure_determinism(seed: int, device: object, *, enabled: bool) -> None:
         if os.environ.get("CUBLAS_WORKSPACE_CONFIG") not in {":4096:8", ":16:8"}:
             raise RuntimeError(
                 "CUDA deterministic training requires CUBLAS_WORKSPACE_CONFIG=:4096:8 "
-                "before Python starts"
+                "before CUDA context initialization"
             )
         torch.cuda.manual_seed_all(seed)
     torch.use_deterministic_algorithms(enabled)

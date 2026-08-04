@@ -17,6 +17,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from covid_audio_btp.hst_reliability import (
     HSTPipeline,
+    hst_process_environment,
     launch_detached_run,
     load_controller_config,
     read_run_status,
@@ -125,6 +126,7 @@ def _cuda_uuid() -> str:
 
 def main() -> None:
     args = parse_args()
+    os.environ.update(hst_process_environment(device=args.device))
     project_root = args.project_root.resolve()
     config_path = _absolute(project_root, args.config)
     accepted_path = _absolute(project_root, args.accepted_freezes)
