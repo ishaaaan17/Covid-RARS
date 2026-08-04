@@ -841,7 +841,6 @@ class HSTCapacityInternalFusionPipeline(HSTPipeline):
         "manifests",
         "small_smoke",
         "base_resource_pilot",
-        "aligned_comparator",
         "internal_cv",
         "fusion",
         "gradcam",

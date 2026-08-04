@@ -479,7 +479,7 @@ def _preflight(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
     paths = _section(config, "paths")
     required_inputs.append(_project_path(config, paths.get("coswara_metadata", "")))
     required_inputs.append(_project_path(config, paths.get("coughvid_metadata", "")))
-    if config.mode == "full":
+    if config.mode == "full" and "aligned_comparator" in pipeline.STAGES:
         required_inputs.append(_project_path(config, paths.get("compare_is10_features", "")))
     for path in required_inputs:
         if not path.is_file():
@@ -793,7 +793,26 @@ def _metadata_for_spectrogram_stage(
     metadata: pd.DataFrame,
     *,
     mode: str,
+    workload_profile: str = FULL_RELIABILITY_PROFILE,
 ) -> pd.DataFrame:
+    if (
+        mode == "full"
+        and workload_profile == CAPACITY_INTERNAL_FUSION_PROFILE
+    ):
+        required = {"dataset", "modality"}
+        missing = sorted(required - set(metadata.columns))
+        if missing:
+            raise ValueError(f"Capacity preprocessing scope is missing columns: {missing}")
+        selected = metadata.loc[
+            metadata["dataset"].astype(str).eq("coswara")
+            & metadata["modality"].astype(str).isin(["cough", "speech"])
+        ].copy()
+        observed = set(selected["modality"].astype(str))
+        if observed != {"cough", "speech"}:
+            raise ValueError(
+                "Capacity preprocessing requires eligible Coswara cough and speech recordings"
+            )
+        return selected
     if mode not in {"smoke", "pilot"}:
         return metadata.copy()
     required = {"dataset", "modality"}
@@ -1057,6 +1076,9 @@ def _preprocess_worker_pilot(
     metadata = _metadata_for_spectrogram_stage(
         _primary_contract_metadata(pipeline),
         mode=pipeline.config.mode,
+        workload_profile=workload_profile_from_scientific_config(
+            pipeline.config.scientific_config
+        ).name,
     )
     metadata = _bind_frozen_audio_sources(pipeline, metadata)
     spectrogram_config = HSTSpectrogramConfig.paper_default()
@@ -1104,6 +1126,9 @@ def _spectrogram_cache(pipeline: HSTPipeline, _stage: str) -> Mapping[str, objec
     metadata = _metadata_for_spectrogram_stage(
         _primary_contract_metadata(pipeline),
         mode=pipeline.config.mode,
+        workload_profile=workload_profile_from_scientific_config(
+            pipeline.config.scientific_config
+        ).name,
     )
     metadata = _bind_frozen_audio_sources(pipeline, metadata)
     selection_path = pipeline.run_root / "audits" / "preprocess_worker_selection.json"
@@ -1295,11 +1320,6 @@ def _manifests(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
             }
         )
         comparator_components = _ALIGNED_COMPARATOR_COMPONENTS
-    elif (
-        pipeline.config.mode == "full"
-        and workload_profile.name == CAPACITY_INTERNAL_FUSION_PROFILE
-    ):
-        comparator_components = ("internal",)
     if comparator_components:
         manifests["aligned_comparator"] = _build_aligned_comparator_manifest(
             {name: manifests[name] for name in comparator_components}
@@ -4794,10 +4814,97 @@ def _publication_uniform_cough_speech_table(
     )
 
 
+def _capacity_hst_only_fusion(pipeline: HSTPipeline) -> Mapping[str, object]:
+    """Run the bounded HST model bank without the full-study comparator gate."""
+    _manifest_path, manifest, _manifest_file_sha256 = _load_indexed_manifest(
+        pipeline, "internal"
+    )
+    _source_only_comparator_manifest(manifest, require_union=False)
+    _hst_receipt_path, hst_receipt, _hst_receipt_sha = _verified_stage_receipt(
+        pipeline, "internal_cv"
+    )
+    hst_paths = _internal_track_a_recording_prediction_paths(
+        pipeline, hst_receipt
+    )
+    hst_raw = pd.concat(
+        [pd.read_csv(path, low_memory=False) for path in hst_paths],
+        ignore_index=True,
+        sort=False,
+    )
+    protocol = str(manifest["protocol"].iloc[0])
+    hst_raw = hst_raw.loc[hst_raw["protocol"].astype(str).eq(protocol)].copy()
+    hst = _prepare_fusion_source(
+        hst_raw,
+        manifest,
+        pipeline=pipeline,
+        source_family="hst",
+    )
+    result = run_hst_fusion_bank(
+        hst,
+        analysis_mode="exploratory",
+    )
+    stage_root = pipeline.run_root / "scientific" / "fusion"
+    stage_root.mkdir(parents=True, exist_ok=True)
+    hst_path = stage_root / "hst_recording_predictions.csv"
+    _atomic_csv(hst, hst_path)
+    generation_root = stage_root / "generation"
+    generation_receipt = result.save_generation(generation_root)
+    current, checksums, _generation_files = _verify_fusion_generation(
+        generation_root, generation_receipt
+    )
+    output_paths: list[Path] = [hst_path, current, checksums]
+    for name, _filename in _fusion_contract.FUSION_TABLE_FILENAMES:
+        frame = getattr(result, name).copy()
+        if name == "metrics" and "model_name" not in frame:
+            frame["model_name"] = frame.get(
+                "model", frame.get("source_family", "fusion")
+            )
+        path = stage_root / f"fusion_{name}.csv"
+        _atomic_csv(frame, path)
+        output_paths.append(path)
+    publication_partitions = {
+        f"primary_hst_{split}_predictions": _publication_fusion_partition(
+            result.predictions,
+            source_family="hst",
+            split=split,
+        )
+        for split in ("validation", "test")
+    }
+    for name, frame in publication_partitions.items():
+        path = stage_root / f"{name}.csv"
+        _atomic_csv(frame, path)
+        output_paths.append(path)
+    return {
+        "output_paths": output_paths,
+        "row_counts": {
+            name: len(getattr(result, name))
+            for name, _filename in _fusion_contract.FUSION_TABLE_FILENAMES
+        }
+        | {name: len(frame) for name, frame in publication_partitions.items()},
+        "metadata": {
+            "analysis_mode": "exploratory",
+            "analysis_scope": "internal_hst_cough_speech_model_bank_extension",
+            "primary_method": "complete_case_uniform_cough_speech",
+            "secondary_methods": (
+                "validation_weighted_auprc,stacked_logistic_validation"
+            ),
+            "generation_id": generation_receipt["generation_id"],
+            "comparator_required": False,
+            "target_fit": False,
+            "target_selection": False,
+        },
+    }
+
+
 @_scientific_handler("fusion")
 def _fusion(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
     if pipeline.config.mode != "full":
         raise RuntimeError("Confirmatory fusion requires full mode")
+    profile = workload_profile_from_scientific_config(
+        pipeline.config.scientific_config
+    )
+    if profile.name == CAPACITY_INTERNAL_FUSION_PROFILE:
+        return _capacity_hst_only_fusion(pipeline)
     _manifest_path, manifest, _manifest_file_sha256 = _load_indexed_manifest(
         pipeline, "internal"
     )

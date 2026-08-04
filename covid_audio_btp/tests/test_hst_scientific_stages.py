@@ -1000,7 +1000,7 @@ def test_manifest_stage_keeps_coughvid_out_of_all_source_training_manifests(
     )
 
 
-def test_capacity_manifest_stage_builds_only_internal_comparator_context(
+def test_capacity_manifest_stage_builds_only_internal_hst_context(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import covid_audio_btp.hst_protocols as protocols
@@ -1029,7 +1029,6 @@ def test_capacity_manifest_stage_builds_only_internal_comparator_context(
         }
     )
     cache.to_csv(cache_path, index=False)
-    aligned_components: list[tuple[str, ...]] = []
 
     def internal_builder(frame: pd.DataFrame, **_kwargs: object) -> pd.DataFrame:
         result = frame[["dataset", "modality", "recording_key"]].copy()
@@ -1041,14 +1040,6 @@ def test_capacity_manifest_stage_builds_only_internal_comparator_context(
 
     def forbidden_pair(*_args: object, **_kwargs: object) -> tuple[pd.DataFrame, pd.DataFrame]:
         raise AssertionError("capacity profile invoked an excluded manifest builder")
-
-    def aligned_builder(components: dict[str, pd.DataFrame]) -> pd.DataFrame:
-        aligned_components.append(tuple(components))
-        result = components["internal"].copy()
-        result["manifest_component"] = "internal"
-        result["source_manifest_sha256"] = "8" * 64
-        result["manifest_sha256"] = "9" * 64
-        return result
 
     monkeypatch.setattr(stages, "scientific_configuration_fingerprint", lambda _config: "e" * 64)
     monkeypatch.setattr(
@@ -1062,7 +1053,7 @@ def test_capacity_manifest_stage_builds_only_internal_comparator_context(
     monkeypatch.setattr(stages, "build_common_late_test_manifests", forbidden_pair)
     monkeypatch.setattr(stages, "build_reverse_temporal_hst_manifest", forbidden_builder)
     monkeypatch.setattr(stages, "build_external_hst_manifest", forbidden_builder)
-    monkeypatch.setattr(stages, "_build_aligned_comparator_manifest", aligned_builder)
+    monkeypatch.setattr(stages, "_build_aligned_comparator_manifest", forbidden_builder)
     monkeypatch.setattr(
         stages,
         "audit_hst_manifest",
@@ -1071,21 +1062,44 @@ def test_capacity_manifest_stage_builds_only_internal_comparator_context(
 
     result = stages._manifests(pipeline, "manifests")
 
-    assert aligned_components == [("internal",)]
     assert result["row_counts"].keys() == {
         "representation_eligibility",
         "internal",
-        "aligned_comparator",
     }
     index = json.loads(
         (pipeline.run_root / "manifests" / "manifest_index.json").read_text(
             encoding="utf-8"
         )
     )
-    assert set(index["manifests"]) == {"internal", "aligned_comparator"}
-    assert set(
-        index["manifests"]["aligned_comparator"]["component_manifest_sha256"]
-    ) == {"internal"}
+    assert set(index["manifests"]) == {"internal"}
+
+
+def test_capacity_fusion_dispatches_without_comparator(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import covid_audio_btp.hst_stages as stages
+    from covid_audio_btp.hst_workloads import CAPACITY_INTERNAL_FUSION_PROFILE
+
+    pipeline = _pipeline(tmp_path)
+    pipeline.config.scientific_config["experiment"]["workload_profile"] = (
+        CAPACITY_INTERNAL_FUSION_PROFILE
+    )
+    pipeline.config.scientific_config["experiment"]["secondary_modalities"] = []
+    expected = {
+        "output_paths": [pipeline.run_root / "capacity-fusion.csv"],
+        "row_counts": {"predictions": 1},
+        "metadata": {"comparator_required": False},
+    }
+    calls: list[object] = []
+
+    def capacity_fusion(received: object) -> dict[str, object]:
+        calls.append(received)
+        return expected
+
+    monkeypatch.setattr(stages, "_capacity_hst_only_fusion", capacity_fusion)
+
+    assert stages._fusion(pipeline, "fusion") == expected
+    assert calls == [pipeline]
 
 
 def test_aligned_comparator_manifest_unions_all_declared_contexts_once() -> None:

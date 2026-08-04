@@ -44,6 +44,7 @@ def test_capacity_config_is_a_distinct_twenty_job_internal_fusion_contract() -> 
     assert "split_policy_contrast" not in HSTCapacityInternalFusionPipeline.STAGES
     assert "reverse_temporal" not in HSTCapacityInternalFusionPipeline.STAGES
     assert "external_transfer" not in HSTCapacityInternalFusionPipeline.STAGES
+    assert "aligned_comparator" not in HSTCapacityInternalFusionPipeline.STAGES
     assert HSTCapacityInternalFusionPipeline.STAGES[-3:] == (
         "fusion",
         "gradcam",
@@ -114,3 +115,26 @@ def test_capacity_workload_rejects_full_profile_modalities() -> None:
             secondary_modalities=("breath",),
             effective_batch_size=8,
         )
+
+
+def test_capacity_full_preprocessing_is_coswara_cough_and_speech_only() -> None:
+    from covid_audio_btp.hst_stages import _metadata_for_spectrogram_stage
+    from covid_audio_btp.hst_workloads import CAPACITY_INTERNAL_FUSION_PROFILE
+
+    metadata = pd.DataFrame(
+        {
+            "dataset": ["coswara", "coswara", "coswara", "coughvid"],
+            "modality": ["cough", "speech", "breath", "cough"],
+            "recording_key": ["c1", "s1", "b1", "e1"],
+        }
+    )
+
+    selected = _metadata_for_spectrogram_stage(
+        metadata,
+        mode="full",
+        workload_profile=CAPACITY_INTERNAL_FUSION_PROFILE,
+    )
+
+    assert set(selected["dataset"]) == {"coswara"}
+    assert set(selected["modality"]) == {"cough", "speech"}
+    assert set(selected["recording_key"]) == {"c1", "s1"}
