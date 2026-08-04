@@ -1000,6 +1000,94 @@ def test_manifest_stage_keeps_coughvid_out_of_all_source_training_manifests(
     )
 
 
+def test_capacity_manifest_stage_builds_only_internal_comparator_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import covid_audio_btp.hst_protocols as protocols
+    import covid_audio_btp.hst_stages as stages
+    from covid_audio_btp.hst_workloads import CAPACITY_INTERNAL_FUSION_PROFILE
+
+    pipeline = _pipeline(tmp_path)
+    pipeline.config.scientific_config["experiment"]["workload_profile"] = (
+        CAPACITY_INTERNAL_FUSION_PROFILE
+    )
+    pipeline.config.scientific_config["experiment"]["secondary_modalities"] = []
+    cache_path = pipeline.run_root / "manifests" / "spectrogram_cache_index.csv"
+    cache_path.parent.mkdir(parents=True)
+    cache = pd.DataFrame(
+        {
+            "eligible": [True, True, True],
+            "dataset": ["coswara", "coswara", "coughvid"],
+            "participant_key": ["coswara::p-c", "coswara::p-s", "coughvid::p-c"],
+            "modality": ["cough", "speech", "cough"],
+            "recording_key": ["coswara::c", "coswara::s", "coughvid::c"],
+            "label_binary": ["negative", "positive", "negative"],
+            "tensor_sha256": ["1" * 64, "2" * 64, "3" * 64],
+            "source_audio_sha256": ["4" * 64, "5" * 64, "6" * 64],
+            "preprocessing_hash": ["7" * 64] * 3,
+            "representation_id": ["paper_logmel_224"] * 3,
+        }
+    )
+    cache.to_csv(cache_path, index=False)
+    aligned_components: list[tuple[str, ...]] = []
+
+    def internal_builder(frame: pd.DataFrame, **_kwargs: object) -> pd.DataFrame:
+        result = frame[["dataset", "modality", "recording_key"]].copy()
+        result["protocol"] = "internal"
+        return result
+
+    def forbidden_builder(*_args: object, **_kwargs: object) -> pd.DataFrame:
+        raise AssertionError("capacity profile invoked an excluded manifest builder")
+
+    def forbidden_pair(*_args: object, **_kwargs: object) -> tuple[pd.DataFrame, pd.DataFrame]:
+        raise AssertionError("capacity profile invoked an excluded manifest builder")
+
+    def aligned_builder(components: dict[str, pd.DataFrame]) -> pd.DataFrame:
+        aligned_components.append(tuple(components))
+        result = components["internal"].copy()
+        result["manifest_component"] = "internal"
+        result["source_manifest_sha256"] = "8" * 64
+        result["manifest_sha256"] = "9" * 64
+        return result
+
+    monkeypatch.setattr(stages, "scientific_configuration_fingerprint", lambda _config: "e" * 64)
+    monkeypatch.setattr(
+        protocols,
+        "scientific_configuration_fingerprint",
+        lambda _config: "e" * 64,
+    )
+    monkeypatch.setattr(stages, "build_protocol_matched_hst_manifest", internal_builder)
+    monkeypatch.setattr(stages, "build_hst_task2_like_cough_manifest", forbidden_builder)
+    monkeypatch.setattr(stages, "build_split_policy_contrast_manifests", forbidden_pair)
+    monkeypatch.setattr(stages, "build_common_late_test_manifests", forbidden_pair)
+    monkeypatch.setattr(stages, "build_reverse_temporal_hst_manifest", forbidden_builder)
+    monkeypatch.setattr(stages, "build_external_hst_manifest", forbidden_builder)
+    monkeypatch.setattr(stages, "_build_aligned_comparator_manifest", aligned_builder)
+    monkeypatch.setattr(
+        stages,
+        "audit_hst_manifest",
+        lambda frame: pd.DataFrame({"rows": [len(frame)]}),
+    )
+
+    result = stages._manifests(pipeline, "manifests")
+
+    assert aligned_components == [("internal",)]
+    assert result["row_counts"].keys() == {
+        "representation_eligibility",
+        "internal",
+        "aligned_comparator",
+    }
+    index = json.loads(
+        (pipeline.run_root / "manifests" / "manifest_index.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert set(index["manifests"]) == {"internal", "aligned_comparator"}
+    assert set(
+        index["manifests"]["aligned_comparator"]["component_manifest_sha256"]
+    ) == {"internal"}
+
+
 def test_aligned_comparator_manifest_unions_all_declared_contexts_once() -> None:
     import covid_audio_btp.hst_stages as stages
     from covid_audio_btp import hst_protocols

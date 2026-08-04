@@ -1168,6 +1168,7 @@ def _manifests(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
         raise ValueError("Spectrogram cache contains non-boolean eligibility values")
     cache["eligible"] = cache["eligible"].astype(bool)
     scientific_config = pipeline.config.scientific_config
+    workload_profile = workload_profile_from_scientific_config(scientific_config)
     fingerprint = scientific_configuration_fingerprint(scientific_config)
     eligibility = intersect_representation_eligibility(
         cache,
@@ -1222,7 +1223,8 @@ def _manifests(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
     internal_path = output_root / "internal.csv"
     _atomic_csv(internal, internal_path)
     internal_manifest_sha256 = stable_file_sha256(internal_path)
-    if pipeline.config.mode == "full":
+    comparator_components: tuple[str, ...] = ()
+    if pipeline.config.mode == "full" and workload_profile.name == FULL_RELIABILITY_PROFILE:
         task2_like = build_hst_task2_like_cough_manifest(
             source_cache,
             seeds=seeds,
@@ -1292,8 +1294,15 @@ def _manifests(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
                 "external": external,
             }
         )
+        comparator_components = _ALIGNED_COMPARATOR_COMPONENTS
+    elif (
+        pipeline.config.mode == "full"
+        and workload_profile.name == CAPACITY_INTERNAL_FUSION_PROFILE
+    ):
+        comparator_components = ("internal",)
+    if comparator_components:
         manifests["aligned_comparator"] = _build_aligned_comparator_manifest(
-            {name: manifests[name] for name in _ALIGNED_COMPARATOR_COMPONENTS}
+            {name: manifests[name] for name in comparator_components}
         )
     outputs: list[Path] = []
     row_counts: dict[str, int] = {}
@@ -1346,7 +1355,7 @@ def _manifests(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
                                         "source_manifest_sha256",
                                     ].iloc[0]
                                 )
-                                for component in _ALIGNED_COMPARATOR_COMPONENTS
+                                for component in comparator_components
                             }
                         }
                         if name == "aligned_comparator"
