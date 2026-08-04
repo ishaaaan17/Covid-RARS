@@ -909,8 +909,58 @@ def validate_manifest_cache_contract(
         "preprocessing_hash",
     ]
     identity_columns.append("representation_id")
+    identity_set = set(identity_columns)
+    overlapping_payload_columns = sorted(
+        (
+            set(selected_manifest.columns)
+            & set(selected_cache.columns)
+            & required_cache
+        )
+        - identity_set
+    )
+    if overlapping_payload_columns:
+        manifest_overlap = selected_manifest[
+            identity_columns + overlapping_payload_columns
+        ].rename(
+            columns={
+                column: f"manifest::{column}"
+                for column in overlapping_payload_columns
+            }
+        )
+        cache_overlap = selected_cache[
+            identity_columns + overlapping_payload_columns
+        ].rename(
+            columns={
+                column: f"cache::{column}" for column in overlapping_payload_columns
+            }
+        )
+        overlap = manifest_overlap.merge(
+            cache_overlap,
+            on=identity_columns,
+            how="left",
+            validate="one_to_one",
+            indicator=True,
+        )
+        if not overlap["_merge"].eq("both").all():
+            raise ValueError("Manifest identity or labels disagree with the cache contract")
+        mismatched_columns: list[str] = []
+        for column in overlapping_payload_columns:
+            manifest_values = overlap[f"manifest::{column}"]
+            cache_values = overlap[f"cache::{column}"]
+            equal = manifest_values.eq(cache_values) | (
+                manifest_values.isna() & cache_values.isna()
+            )
+            if not equal.all():
+                mismatched_columns.append(column)
+        if mismatched_columns:
+            raise ValueError(
+                "Manifest cache provenance disagrees for overlapping columns: "
+                f"{mismatched_columns}"
+            )
     cache_payload_columns = [
-        column for column in selected_cache.columns if column not in set(identity_columns)
+        column
+        for column in selected_cache.columns
+        if column not in identity_set and column not in selected_manifest.columns
     ]
     aligned = selected_manifest.merge(
         selected_cache[identity_columns + cache_payload_columns],

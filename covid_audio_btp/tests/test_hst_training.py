@@ -504,6 +504,56 @@ def test_manifest_cache_contract_is_exact_and_fail_closed(tmp_path: Path) -> Non
     )
 
 
+def test_manifest_cache_contract_validates_frozen_overlapping_cache_payload(
+    tmp_path: Path,
+) -> None:
+    from covid_audio_btp.hst_training import validate_manifest_cache_contract
+
+    cache, manifest = _contract_inputs(tmp_path)
+    identity = [
+        "dataset",
+        "recording_key",
+        "participant_key",
+        "label_binary",
+        "modality",
+        "source_audio_sha256",
+        "preprocessing_hash",
+        "representation_id",
+    ]
+    frozen_payload = manifest.merge(
+        cache[identity + ["cache_path", "tensor_sha256", "eligible"]],
+        on=identity,
+        how="left",
+        validate="one_to_one",
+    )
+
+    aligned = validate_manifest_cache_contract(
+        cache,
+        frozen_payload,
+        fold=1,
+        modality="cough",
+    )
+
+    assert "cache_path" in aligned
+    assert "cache_path_x" not in aligned
+    assert "cache_path_y" not in aligned
+    assert aligned["cache_path"].astype(str).equals(
+        frozen_payload.sort_values(
+            ["split", "recording_key"], kind="mergesort"
+        )["cache_path"].reset_index(drop=True).astype(str)
+    )
+
+    corrupted = frozen_payload.copy()
+    corrupted.loc[corrupted.index[0], "cache_path"] = str(tmp_path / "wrong.npy")
+    with pytest.raises(ValueError, match="cache provenance disagrees"):
+        validate_manifest_cache_contract(
+            cache,
+            corrupted,
+            fold=1,
+            modality="cough",
+        )
+
+
 def test_manifest_cache_contract_accepts_realistic_global_multidataset_cache(
     tmp_path: Path,
 ) -> None:
