@@ -1342,6 +1342,10 @@ def test_real_scientific_registry_drives_resumable_controller_traversal(
             "mode": "pilot",
             "model": "hst_base",
         }
+    # Production pilot/full manifests are outputs of this run, so no accepted
+    # pre-run manifest hashes exist. Downstream stages must bind the generated
+    # manifest index instead.
+    config.manifest_hashes = {}
 
     registered = stages.build_scientific_stage_handlers(config)
     assert tuple(registered) == HSTPipeline.STAGES
@@ -1359,10 +1363,36 @@ def test_real_scientific_registry_drives_resumable_controller_traversal(
             }.get(stage, f"{stage}.txt")
             output = pipeline.run_root / "integration" / suffix
             output.parent.mkdir(parents=True, exist_ok=True)
+            output_paths = [output]
             if stage == "spectrogram_cache":
                 pd.DataFrame(
                     columns=["eligible", "cache_path", "tensor_sha256"]
                 ).to_csv(output, index=False)
+            elif stage == "manifests":
+                from covid_audio_btp.hst_runtime import stable_file_sha256
+
+                manifest_root = pipeline.run_root / "manifests"
+                manifest_root.mkdir(parents=True, exist_ok=True)
+                manifest = manifest_root / "internal.csv"
+                manifest.write_text("recording_key,split\ncoswara::r1,test\n", encoding="ascii")
+                output = manifest_root / "manifest_index.json"
+                output.write_text(
+                    json.dumps(
+                        {
+                            "schema_version": 1,
+                            "manifests": {
+                                "internal": {
+                                    "path": manifest.relative_to(pipeline.run_root).as_posix(),
+                                    "sha256": stable_file_sha256(manifest),
+                                    "rows": 1,
+                                }
+                            },
+                        },
+                        sort_keys=True,
+                    ),
+                    encoding="ascii",
+                )
+                output_paths = [manifest, output]
             elif stage == "aligned_comparator":
                 from covid_audio_btp.hst_runtime import stable_file_sha256
 
@@ -1395,7 +1425,7 @@ def test_real_scientific_registry_drives_resumable_controller_traversal(
                 )
             else:
                 output.write_text(f"{pipeline.run_id}:{stage}\n", encoding="ascii")
-            return {"output_paths": [output], "row_counts": {"records": 1}}
+            return {"output_paths": output_paths, "row_counts": {"records": 1}}
 
         return execute
 
@@ -1428,6 +1458,63 @@ def test_real_scientific_registry_drives_resumable_controller_traversal(
 
         assert receipt["receipt_type"] == "hst_stage"
         assert supplied_hash == canonical_json_sha256(receipt)
+
+
+def test_generated_manifest_binding_rejects_changed_manifest_bytes(
+    tmp_path: Path,
+) -> None:
+    from covid_audio_btp.hst_reliability import (
+        HSTPipeline,
+        HSTPipelineConfig,
+        StageExecutionError,
+    )
+    from covid_audio_btp.hst_runtime import stable_file_sha256
+
+    config = HSTPipelineConfig.smoke(tmp_path, device="cpu")
+    config.manifest_hashes = {}
+    pipeline = HSTPipeline(config)
+    manifest_root = pipeline.run_root / "manifests"
+    manifest_root.mkdir(parents=True)
+    manifest = manifest_root / "internal.csv"
+    manifest.write_text("recording_key,split\ncoswara::r1,test\n", encoding="ascii")
+    manifest_hash = stable_file_sha256(manifest)
+    index_path = manifest_root / "manifest_index.json"
+    index_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "manifests": {
+                    "internal": {
+                        "path": manifest.relative_to(pipeline.run_root).as_posix(),
+                        "sha256": manifest_hash,
+                        "rows": 1,
+                    }
+                },
+            },
+            sort_keys=True,
+        ),
+        encoding="ascii",
+    )
+    receipt = {
+        "status": "success",
+        "output_checksums": {
+            manifest.relative_to(pipeline.run_root).as_posix(): manifest_hash,
+            index_path.relative_to(pipeline.run_root).as_posix(): stable_file_sha256(
+                index_path
+            ),
+        },
+    }
+    pipeline.stage_receipt_path("manifests").write_text(
+        json.dumps(receipt, sort_keys=True), encoding="ascii"
+    )
+
+    assert pipeline._manifest_hashes_for_stage("small_smoke") == {
+        "internal": manifest_hash,
+        "manifest_index": stable_file_sha256(index_path),
+    }
+    manifest.write_text("recording_key,split\ncoswara::r1,train\n", encoding="ascii")
+    with pytest.raises(StageExecutionError, match="disagree with frozen provenance"):
+        pipeline._manifest_hashes_for_stage("small_smoke")
 
 
 def test_spectrogram_stage_receipt_is_not_reusable_after_shared_tensor_corruption(

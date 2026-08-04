@@ -356,6 +356,77 @@ class HSTPipeline:
         )
         return source_tree_hash(self.config.source_root, relative)
 
+    def _generated_manifest_hashes(self) -> dict[str, str]:
+        """Load downstream manifest bindings from the verified stage outputs."""
+        index_path = self.run_root / "manifests" / "manifest_index.json"
+        receipt_path = self.stage_receipt_path("manifests")
+        if not index_path.is_file() or not receipt_path.is_file():
+            raise StageExecutionError(
+                "Generated manifest hashes are unavailable before the manifests stage"
+            )
+        try:
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise StageExecutionError("Generated manifest provenance is unreadable") from exc
+        if receipt.get("status") != "success":
+            raise StageExecutionError("The manifests stage has no successful receipt")
+        output_checksums = receipt.get("output_checksums")
+        manifests = index.get("manifests")
+        if not isinstance(output_checksums, Mapping) or not isinstance(manifests, Mapping):
+            raise StageExecutionError("Generated manifest provenance is malformed")
+
+        index_relative = index_path.relative_to(self.run_root).as_posix()
+        index_hash = stable_file_sha256(index_path)
+        if output_checksums.get(index_relative) != index_hash:
+            raise StageExecutionError(
+                "Manifest index bytes disagree with the manifests-stage receipt"
+            )
+        resolved_hashes: dict[str, str] = {"manifest_index": index_hash}
+        for raw_name, raw_entry in sorted(
+            manifests.items(), key=lambda item: str(item[0])
+        ):
+            name = str(raw_name).strip()
+            if not name or not isinstance(raw_entry, Mapping):
+                raise StageExecutionError("Manifest index contains an invalid entry")
+            supplied_path = Path(str(raw_entry.get("path", "")))
+            manifest_path = (
+                supplied_path.resolve()
+                if supplied_path.is_absolute()
+                else (self.run_root / supplied_path).resolve()
+            )
+            try:
+                relative = manifest_path.relative_to(self.run_root).as_posix()
+            except ValueError as exc:
+                raise StageExecutionError(
+                    f"Generated manifest path escapes the run root: {supplied_path}"
+                ) from exc
+            expected_hash = str(raw_entry.get("sha256", "")).casefold()
+            if not _valid_sha256(expected_hash) or not manifest_path.is_file():
+                raise StageExecutionError(
+                    f"Generated manifest entry is incomplete: {name}"
+                )
+            actual_hash = stable_file_sha256(manifest_path)
+            if (
+                actual_hash != expected_hash
+                or output_checksums.get(relative) != actual_hash
+            ):
+                raise StageExecutionError(
+                    f"Generated manifest bytes disagree with frozen provenance: {name}"
+                )
+            resolved_hashes[name] = actual_hash
+        if len(resolved_hashes) == 1:
+            raise StageExecutionError("Manifest index contains no generated manifests")
+        return resolved_hashes
+
+    def _manifest_hashes_for_stage(self, stage: str) -> dict[str, str]:
+        configured = dict(self.config.manifest_hashes)
+        if configured:
+            return configured
+        if self.STAGES.index(stage) <= self.STAGES.index("manifests"):
+            return {}
+        return self._generated_manifest_hashes()
+
     def stage_receipt_path(self, stage: str) -> Path:
         self._validate_stage(stage)
         return self.stage_root / f"{stage}.json"
@@ -414,6 +485,7 @@ class HSTPipeline:
         cached = fingerprint_cache.get(stage)
         if cached is not None:
             return cached
+        manifest_hashes = self._manifest_hashes_for_stage(stage)
         fingerprint = stage_fingerprint(
             stage,
             input_hashes=self.config.input_hashes,
@@ -424,7 +496,7 @@ class HSTPipeline:
             ),
             hst_commit=self.config.hst_commit,
             checkpoint_hashes=self.config.checkpoint_hashes,
-            manifest_hashes=self.config.manifest_hashes,
+            manifest_hashes=manifest_hashes,
             upstream_hashes=self._upstream_receipt_hashes(
                 stage,
                 fingerprint_cache=fingerprint_cache,
@@ -613,6 +685,7 @@ class HSTPipeline:
 
         attempt = int(previous.get("attempt", 0)) + 1
         started_at = _utc_now()
+        manifest_hashes = self._manifest_hashes_for_stage(stage)
         base = {
             "schema_version": 1,
             "receipt_type": "hst_stage",
@@ -627,7 +700,7 @@ class HSTPipeline:
             ),
             "hst_commit": self.config.hst_commit,
             "checkpoint_hashes": dict(self.config.checkpoint_hashes),
-            "manifest_hashes": dict(self.config.manifest_hashes),
+            "manifest_hashes": manifest_hashes,
             "accepted_hashes": dict(self.config.accepted_hashes),
             "upstream_receipt_hashes": self._upstream_receipt_hashes(
                 stage,
