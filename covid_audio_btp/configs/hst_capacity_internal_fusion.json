@@ -1,0 +1,23 @@
+{
+  "extends": "hst_reliability.json",
+  "experiment": {
+    "name": "hst_capacity_internal_cough_speech_fusion",
+    "workload_profile": "capacity_internal_cough_speech",
+    "primary_model": "hst_base",
+    "smoke_model": "hst_small",
+    "primary_modalities": ["cough", "speech"],
+    "secondary_modalities": [],
+    "project_seeds": [1, 2, 5, 12, 40, 52, 72, 2002, 4002, 6002],
+    "seed_provenance": "HST/baselines released seed lists",
+    "test_evaluation_policy": "single_nonadaptive_pass_of_prespecified_locked_endpoints_after_validation_freeze",
+    "scope_statement": "Internal Coswara cough and speech HST-Base branches plus validation-frozen multimodal fusion only; no HST temporal or external-transfer claim is authorized by this profile."
+  },
+  "performance_objectives": {
+    "references": {
+      "__replace__": true,
+      "cough": 0.868,
+      "speech": 0.891,
+      "cough_speech_fusion": 0.897
+    }
+  }
+}

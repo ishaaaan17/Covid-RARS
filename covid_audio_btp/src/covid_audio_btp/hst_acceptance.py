@@ -11,6 +11,7 @@ from .hst_resource_pilot import (
     resource_pilot_freeze_payload,
     runtime_projection_policy_payload,
 )
+from .hst_workloads import get_hst_workload_profile
 
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
@@ -19,7 +20,6 @@ _RUNTIME_ESTIMATE_BASIS = (
     "selected_cough_fold_optimizer_throughput_times_modality_specific_"
     "all_participant_upper_bound_and_frozen_job_epoch_plan"
 )
-_FROZEN_JOBS_BY_MODALITY = {"breath": 10, "cough": 25, "speech": 15}
 
 
 def _validate_conservative_runtime_projection(
@@ -51,17 +51,17 @@ def _validate_conservative_runtime_projection(
         for value in integer_fields.values()
     ):
         raise ValueError("Resource-pilot runtime count fields must be positive integers")
-    if set(updates) != set(_FROZEN_JOBS_BY_MODALITY) or dict(
-        jobs
-    ) != _FROZEN_JOBS_BY_MODALITY:
+    profile = get_hst_workload_profile(projection.get("workload_profile"))
+    expected_jobs = dict(profile.training_jobs_by_modality)
+    if set(updates) != set(expected_jobs) or dict(jobs) != expected_jobs:
         raise ValueError("Resource-pilot runtime projection changed the modality-specific job plan")
-    if projection.get("planned_training_jobs") != 50 or projection.get(
+    if projection.get("planned_training_jobs") != profile.total_training_jobs or projection.get(
         "confirmatory_epochs"
     ) != 100:
         raise ValueError("Resource-pilot runtime projection changed the frozen job or epoch plan")
     expected_updates = 100 * sum(
         int(updates[modality]) * count
-        for modality, count in _FROZEN_JOBS_BY_MODALITY.items()
+        for modality, count in expected_jobs.items()
     )
     if projection.get("estimated_optimizer_updates") != expected_updates:
         raise ValueError("Resource-pilot runtime projection has inconsistent optimizer updates")
@@ -90,6 +90,7 @@ def _validate_conservative_runtime_projection(
     ):
         raise ValueError("Resource-pilot end-to-end runtime projection is inconsistent")
     expected_policy = runtime_projection_policy_payload(
+        workload_profile=profile.name,
         optimizer_updates_per_epoch_by_modality={
             str(key): int(value) for key, value in updates.items()
         },

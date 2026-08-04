@@ -829,6 +829,48 @@ class HSTPipeline:
         return pd.DataFrame(rows)
 
 
+class HSTCapacityInternalFusionPipeline(HSTPipeline):
+    """Bounded HST controller for the frozen internal cough+speech question."""
+
+    STAGES = (
+        "preflight",
+        "data_contracts",
+        "checkpoint",
+        "preprocess_worker_pilot",
+        "spectrogram_cache",
+        "manifests",
+        "small_smoke",
+        "base_resource_pilot",
+        "aligned_comparator",
+        "internal_cv",
+        "fusion",
+        "gradcam",
+        "evidence_pack",
+    )
+    MODE_LIMITS = {
+        "smoke": "small_smoke",
+        "pilot": "base_resource_pilot",
+        "full": "evidence_pack",
+    }
+
+
+def pipeline_class_for_config(
+    scientific_config: Mapping[str, object],
+) -> type[HSTPipeline]:
+    from .hst_workloads import (
+        CAPACITY_INTERNAL_FUSION_PROFILE,
+        workload_profile_from_scientific_config,
+    )
+
+    experiment = scientific_config.get("experiment")
+    if not isinstance(experiment, Mapping) or "workload_profile" not in experiment:
+        return HSTPipeline
+    profile = workload_profile_from_scientific_config(scientific_config)
+    if profile.name == CAPACITY_INTERNAL_FUSION_PROFILE:
+        return HSTCapacityInternalFusionPipeline
+    return HSTPipeline
+
+
 def _read_optional_json(path: Path) -> dict[str, object]:
     if not path.is_file():
         return {}
@@ -836,6 +878,56 @@ def _read_optional_json(path: Path) -> dict[str, object]:
     if not isinstance(payload, dict):
         raise ValueError(f"Expected a JSON object: {path}")
     return payload
+
+
+def _merge_scientific_config(
+    base: Mapping[str, object],
+    override: Mapping[str, object],
+) -> dict[str, object]:
+    if override.get("__replace__") is True:
+        return {
+            str(key): value
+            for key, value in override.items()
+            if key not in {"__replace__", "extends"}
+        }
+    merged: dict[str, object] = dict(base)
+    for key, value in override.items():
+        if key == "extends":
+            continue
+        current = merged.get(key)
+        if isinstance(current, Mapping) and isinstance(value, Mapping):
+            merged[key] = _merge_scientific_config(current, value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def _read_scientific_config(
+    path: Path,
+    *,
+    _seen: frozenset[Path] = frozenset(),
+) -> dict[str, object]:
+    path = Path(path).resolve()
+    if path in _seen:
+        raise ValueError("Scientific configuration inheritance contains a cycle")
+    payload = _read_optional_json(path)
+    inherited = payload.get("extends")
+    if inherited is None:
+        return payload
+    if not isinstance(inherited, str) or not inherited.strip():
+        raise ValueError("Scientific configuration extends must be a relative path")
+    supplied = Path(inherited)
+    if supplied.is_absolute():
+        raise ValueError("Scientific configuration extends cannot be absolute")
+    base_path = (path.parent / supplied).resolve()
+    try:
+        base_path.relative_to(path.parent.resolve())
+    except ValueError as exc:
+        raise ValueError("Scientific configuration extends escapes its directory") from exc
+    if not base_path.is_file():
+        raise FileNotFoundError(base_path)
+    base = _read_scientific_config(base_path, _seen=_seen | {path})
+    return _merge_scientific_config(base, payload)
 
 
 def _controller_source_paths(project_root: Path) -> tuple[Path, ...]:
@@ -1057,7 +1149,7 @@ def load_controller_config(
     config_path = Path(config_path).resolve()
     if not config_path.is_file():
         raise FileNotFoundError(config_path)
-    scientific_config = _read_optional_json(config_path)
+    scientific_config = _read_scientific_config(config_path)
     accepted_document = _read_optional_json(Path(accepted_freezes_path).resolve())
     accepted_hashes = _accepted_hash_mapping(accepted_document)
     if mode == "full":
@@ -1098,7 +1190,7 @@ def load_controller_config(
 
     dependency_hash = stable_file_sha256(requirements)
     input_hashes = {
-        "scientific_configuration": stable_file_sha256(config_path),
+        "scientific_configuration": canonical_json_sha256(scientific_config),
     }
     paths_config = scientific_config.get("paths", {})
     if isinstance(paths_config, Mapping) and mode in {"pilot", "full"}:
@@ -1216,7 +1308,7 @@ def run_preflight(
             accepted_freezes_path=accepted_freezes_path,
         )
         checks["configuration"] = "ok"
-        pipeline = HSTPipeline(config)
+        pipeline = pipeline_class_for_config(config.scientific_config)(config)
         checks["content_addressed_run"] = "ok"
     except Exception as exc:
         errors.append(f"configuration: {type(exc).__name__}: {exc}")
@@ -1226,7 +1318,7 @@ def run_preflight(
         scientific_config = (
             pipeline.config.scientific_config
             if pipeline is not None
-            else _read_optional_json(Path(config_path).resolve())
+            else _read_scientific_config(Path(config_path).resolve())
         )
         source = scientific_config.get("source", {})
         paths = scientific_config.get("paths", {})
@@ -1327,7 +1419,7 @@ def prepare_hst_prerequisites(
     )
 
     project_root = Path(project_root).resolve()
-    scientific_config = _read_optional_json(Path(config_path).resolve())
+    scientific_config = _read_scientific_config(Path(config_path).resolve())
     source = scientific_config.get("source", {})
     paths = scientific_config.get("paths", {})
     checkpoints = scientific_config.get("checkpoints", {})
@@ -2098,15 +2190,37 @@ def read_hst_run_progress(
 
     if not _STATUS_ID.fullmatch(str(run_id)):
         raise ValueError("run_id contains unsafe characters")
-    if through not in HSTPipeline.STAGES:
-        raise ValueError(f"Unknown HST progress target stage: {through!r}")
     project_root = Path(project_root).resolve()
     run_root = (project_root / "data" / "outputs" / "hst" / run_id).resolve()
     try:
         run_root.relative_to(project_root)
     except ValueError as exc:
         raise ValueError("HST progress run root escapes project_root") from exc
-    target_stages = HSTPipeline.STAGES[: HSTPipeline.STAGES.index(through) + 1]
+    training_job_budgets = dict(_CONFIRMATORY_TRAINING_JOB_BUDGETS)
+    pipeline_stages = HSTPipeline.STAGES
+    pilot_freeze_path = run_root / "audits" / "base_resource_pilot_freeze.json"
+    if pilot_freeze_path.is_file() and not pilot_freeze_path.is_symlink():
+        pilot_freeze = read_json(pilot_freeze_path)
+        projection = pilot_freeze.get("runtime_projection")
+        if isinstance(projection, Mapping):
+            from .hst_workloads import (
+                CAPACITY_INTERNAL_FUSION_PROFILE,
+                get_hst_workload_profile,
+            )
+
+            profile = get_hst_workload_profile(projection.get("workload_profile"))
+            supplied_jobs = projection.get("planned_training_jobs_by_modality")
+            if not isinstance(supplied_jobs, Mapping) or dict(supplied_jobs) != dict(
+                profile.training_jobs_by_modality
+            ):
+                raise ValueError("Progress runtime projection changed its workload profile")
+            training_job_budgets = dict(profile.training_jobs_by_stage)
+            if profile.name == CAPACITY_INTERNAL_FUSION_PROFILE:
+                pipeline_stages = HSTCapacityInternalFusionPipeline.STAGES
+
+    if through not in pipeline_stages:
+        raise ValueError(f"Unknown HST progress target stage: {through!r}")
+    target_stages = pipeline_stages[: pipeline_stages.index(through) + 1]
     completed_stages: list[str] = []
     for stage in target_stages:
         receipt_path = run_root / "runtime" / "stages" / f"{stage}.json"
@@ -2129,7 +2243,7 @@ def read_hst_run_progress(
     running_receipt_count = 0
     active_candidates: list[tuple[int, float, dict[str, object]]] = []
     current_stage_summary: dict[str, object] | None = None
-    for stage, frozen_budget in _CONFIRMATORY_TRAINING_JOB_BUDGETS.items():
+    for stage, frozen_budget in training_job_budgets.items():
         stage_scientific_root = run_root / "scientific" / stage
         plan_path = stage_scientific_root / "job_plan.csv"
         plan = pd.DataFrame()
@@ -2304,7 +2418,7 @@ def read_hst_run_progress(
     current_fraction = 0.0
     if current_job is not None and current_job["status"] != "success":
         current_fraction = float(current_job["epoch_percent"]) / 100.0
-    total_jobs = sum(_CONFIRMATORY_TRAINING_JOB_BUDGETS.values())
+    total_jobs = sum(training_job_budgets.values())
     durable_job_equivalents = min(float(total_jobs), completed_jobs + current_fraction)
     return {
         "schema_version": 1,

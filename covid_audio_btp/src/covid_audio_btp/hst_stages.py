@@ -68,6 +68,11 @@ from .hst_resource_pilot import (
     run_base_resource_pilot_trials,
     runtime_projection_policy_payload,
 )
+from .hst_workloads import (
+    CAPACITY_INTERNAL_FUSION_PROFILE,
+    FULL_RELIABILITY_PROFILE,
+    workload_profile_from_scientific_config,
+)
 from .hst_runtime import atomic_write_json, canonical_json_sha256, stable_file_sha256
 from .hst_spectrograms import HSTSpectrogramConfig
 from .hst_training import (
@@ -1627,18 +1632,24 @@ def _derive_small_smoke_manifest(manifest: pd.DataFrame) -> pd.DataFrame:
 def _frozen_runtime_projection_workload(
     metadata: pd.DataFrame,
     *,
+    workload_profile: str = FULL_RELIABILITY_PROFILE,
     project_seeds: tuple[int, ...],
     primary_modalities: tuple[str, ...],
     secondary_modalities: tuple[str, ...],
     effective_batch_size: int,
 ) -> tuple[dict[str, int], dict[str, int]]:
-    """Return a source-only upper-bound workload for the frozen 50 HST jobs."""
-    if (
-        project_seeds != _TRACK_A_SEEDS
-        or primary_modalities != ("cough", "speech")
-        or secondary_modalities != ("breath",)
-    ):
-        raise ValueError("Runtime projection requires the exact frozen HST job hierarchy")
+    """Return a source-only upper bound for an allowlisted HST workload."""
+    if project_seeds != _TRACK_A_SEEDS:
+        raise ValueError("Runtime projection requires the exact frozen HST seed hierarchy")
+    profile = workload_profile_from_scientific_config(
+        {
+            "experiment": {
+                "workload_profile": workload_profile,
+                "primary_modalities": list(primary_modalities),
+                "secondary_modalities": list(secondary_modalities),
+            }
+        }
+    )
     if "dataset" not in metadata:
         raise ValueError("Runtime projection metadata is missing dataset")
     source = metadata.loc[metadata["dataset"].astype(str).eq("coswara")].copy()
@@ -1651,14 +1662,9 @@ def _frozen_runtime_projection_workload(
         modalities=modalities,
         effective_batch_size=effective_batch_size,
     )
-    jobs = {modality: len(project_seeds) for modality in modalities}
-    # Task-2-like cough repeats the ten project seeds. The four temporal
-    # policies and one reverse-temporal job are run for each primary modality.
-    jobs["cough"] += len(project_seeds)
-    for modality in primary_modalities:
-        jobs[modality] += 5
-    if sum(jobs.values()) != 50:
-        raise AssertionError("Frozen HST-Base training plan must contain exactly 50 jobs")
+    jobs = {str(key): int(value) for key, value in profile.training_jobs_by_modality.items()}
+    if set(jobs) != set(modalities):
+        raise AssertionError("Frozen HST workload modalities do not match its job plan")
     return updates, jobs
 
 
@@ -1703,17 +1709,22 @@ def _base_resource_pilot(
         runtime_config.get("end_to_end_overhead_multiplier", 0.0)
     )
     experiment = _section(pipeline.config, "experiment")
+    profile = workload_profile_from_scientific_config(
+        pipeline.config.scientific_config
+    )
     project_seeds = tuple(int(value) for value in experiment.get("project_seeds", ()))
     primary = tuple(str(value) for value in experiment.get("primary_modalities", ()))
     secondary = tuple(str(value) for value in experiment.get("secondary_modalities", ()))
     updates_by_modality, jobs_by_modality = _frozen_runtime_projection_workload(
         _primary_contract_metadata(pipeline),
+        workload_profile=profile.name,
         project_seeds=project_seeds,
         primary_modalities=primary,
         secondary_modalities=secondary,
         effective_batch_size=8,
     )
     runtime_policy = runtime_projection_policy_payload(
+        workload_profile=profile.name,
         optimizer_updates_per_epoch_by_modality=updates_by_modality,
         planned_training_jobs_by_modality=jobs_by_modality,
         confirmatory_epochs=100,
@@ -1763,6 +1774,7 @@ def _base_resource_pilot(
     if int(selection["effective_batch_size"]) != 8:
         raise ValueError("Resource pilot changed the frozen effective batch size")
     projection = project_full_training_runtime(
+        workload_profile=profile.name,
         selected_trial_seconds=float(selected_trial_row["seconds"]),
         selected_trial_optimizer_updates=int(selected_trial_row["optimizer_updates"]),
         optimizer_updates_per_epoch_by_modality=updates_by_modality,
@@ -2775,17 +2787,25 @@ def _run_training_stage(
 @_scientific_handler("internal_cv")
 def _internal_cv(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
     experiment = _section(pipeline.config, "experiment")
+    profile = workload_profile_from_scientific_config(
+        pipeline.config.scientific_config
+    )
     primary = tuple(str(value) for value in experiment.get("primary_modalities", ()))
     secondary = tuple(str(value) for value in experiment.get("secondary_modalities", ()))
-    if primary != ("cough", "speech") or secondary != ("breath",):
-        raise ValueError("Frozen Track-A modality hierarchy must be cough+speech, then breath")
+    if primary != profile.primary_modalities or secondary != profile.secondary_modalities:
+        raise ValueError("Frozen Track-A modalities differ from the workload profile")
+    additional_requests = (
+        ((('task2_like_cough',), ('cough',), ()),)
+        if profile.name == FULL_RELIABILITY_PROFILE
+        else ()
+    )
     return _run_training_stage(
         pipeline,
         stage="internal_cv",
         manifest_names=("internal",),
         modalities=primary + secondary,
         primary_modalities=primary,
-        additional_requests=((('task2_like_cough',), ('cough',), ()),),
+        additional_requests=additional_requests,
     )
 
 
@@ -6097,7 +6117,11 @@ def _gradcam(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
 
 @_scientific_handler("evidence_pack")
 def _evidence_pack(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
-    required = tuple(stage for stage in HSTPipeline.STAGES if stage != "evidence_pack")
+    profile = workload_profile_from_scientific_config(
+        pipeline.config.scientific_config
+    )
+    pipeline_stages = tuple(getattr(pipeline, "STAGES", HSTPipeline.STAGES))
+    required = tuple(stage for stage in pipeline_stages if stage != "evidence_pack")
     stage_root = pipeline.run_root / "runtime" / "stages"
     stale = stage_root / "evidence_pack.json"
     quarantine = stage_root / ".evidence_pack.previous"
@@ -6160,61 +6184,95 @@ def _evidence_pack(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
         )
         if "evidence_pack" in manifest.get("stages", []):
             raise ValueError("Evidence manifest included its own future stage receipt")
-        engineering_relative = (
-            "scientific/statistics/tables/engineering_objective_audit.csv"
-        )
-        engineering_artifacts = [
-            artifact
-            for artifact in manifest.get("artifacts", [])
-            if isinstance(artifact, Mapping)
-            and artifact.get("path") == engineering_relative
-            and artifact.get("producer_stages") == ["statistics"]
-        ]
-        if len(engineering_artifacts) != 1:
-            raise ValueError(
-                "Evidence manifest lacks the receipted descriptive engineering-objective audit"
+        if profile.name == FULL_RELIABILITY_PROFILE:
+            engineering_relative = (
+                "scientific/statistics/tables/engineering_objective_audit.csv"
             )
-        engineering_path = pipeline.run_root / engineering_relative
-        engineering = pd.read_csv(engineering_path)
-        required_flags = {
-            "targets_not_selection_rules",
-            "generated_after_model_selection",
-            "test_set_is_not_a_stopping_rule",
-        }
-        missing_flags = sorted(required_flags - set(engineering.columns))
-        if missing_flags:
-            raise ValueError(
-                f"Engineering-objective audit misses anti-selection flags: {missing_flags}"
-            )
-        for column in required_flags:
-            normalized = engineering[column].astype(str).str.casefold()
-            if engineering.empty or not normalized.eq("true").all():
+            engineering_artifacts = [
+                artifact
+                for artifact in manifest.get("artifacts", [])
+                if isinstance(artifact, Mapping)
+                and artifact.get("path") == engineering_relative
+                and artifact.get("producer_stages") == ["statistics"]
+            ]
+            if len(engineering_artifacts) != 1:
                 raise ValueError(
-                    f"Engineering-objective audit violates descriptive-only flag {column}"
+                    "Evidence manifest lacks the receipted descriptive engineering-objective audit"
                 )
+            engineering_path = pipeline.run_root / engineering_relative
+            engineering = pd.read_csv(engineering_path)
+            required_flags = {
+                "targets_not_selection_rules",
+                "generated_after_model_selection",
+                "test_set_is_not_a_stopping_rule",
+            }
+            missing_flags = sorted(required_flags - set(engineering.columns))
+            if missing_flags:
+                raise ValueError(
+                    f"Engineering-objective audit misses anti-selection flags: {missing_flags}"
+                )
+            for column in required_flags:
+                normalized = engineering[column].astype(str).str.casefold()
+                if engineering.empty or not normalized.eq("true").all():
+                    raise ValueError(
+                        f"Engineering-objective audit violates descriptive-only flag {column}"
+                    )
+        else:
+            required_capacity_outputs = {
+                "scientific/internal_cv/metrics.csv": "internal_cv",
+                "scientific/fusion/fusion_metrics.csv": "fusion",
+                "scientific/fusion/primary_hst_test_predictions.csv": "fusion",
+            }
+            artifacts = manifest.get("artifacts", [])
+            for relative, producer in required_capacity_outputs.items():
+                matches = [
+                    artifact
+                    for artifact in artifacts
+                    if isinstance(artifact, Mapping)
+                    and artifact.get("path") == relative
+                    and artifact.get("producer_stages") == [producer]
+                ]
+                if len(matches) != 1:
+                    raise ValueError(
+                        f"Capacity evidence manifest lacks required output: {relative}"
+                    )
     except Exception:
         if quarantine.exists() and not stale.exists():
             os.replace(quarantine, stale)
         raise
     quarantine.unlink(missing_ok=True)
+    metadata: dict[str, object] = {
+        "manifest_sha256": manifest["manifest_sha256"],
+        "future_receipt_excluded": True,
+        "workload_profile": profile.name,
+    }
+    if profile.name == FULL_RELIABILITY_PROFILE:
+        metadata.update(
+            {
+                "engineering_targets_not_selection_rules": True,
+                "engineering_objective_audit_sha256": stable_file_sha256(
+                    pipeline.run_root
+                    / "scientific"
+                    / "statistics"
+                    / "tables"
+                    / "engineering_objective_audit.csv"
+                ),
+            }
+        )
+    else:
+        metadata.update(
+            {
+                "analysis_scope": "internal_cough_speech_model_bank_extension",
+                "temporal_or_external_hst_claims_authorized": False,
+            }
+        )
     return {
         "output_paths": [output_path],
         "row_counts": {
             "artifacts": int(manifest["artifact_count"]),
             "stages": int(manifest["stage_count"]),
         },
-        "metadata": {
-            "manifest_sha256": manifest["manifest_sha256"],
-            "future_receipt_excluded": True,
-            "engineering_targets_not_selection_rules": True,
-            "engineering_objective_audit_sha256": stable_file_sha256(
-                pipeline.run_root
-                / "scientific"
-                / "statistics"
-                / "tables"
-                / "engineering_objective_audit.csv"
-            ),
-        },
+        "metadata": metadata,
     }
 
 

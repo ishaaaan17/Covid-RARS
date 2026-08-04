@@ -14,6 +14,8 @@ from typing import Any
 
 import pandas as pd
 
+from .hst_workloads import WORKLOAD_PROFILES, get_hst_workload_profile
+
 from covid_audio_btp.hst_runtime import canonical_json_sha256
 
 
@@ -65,6 +67,7 @@ _RUNTIME_ESTIMATE_BASIS = (
 
 def runtime_projection_policy_payload(
     *,
+    workload_profile: str | None = None,
     optimizer_updates_per_epoch_by_modality: Mapping[str, int],
     planned_training_jobs_by_modality: Mapping[str, int],
     confirmatory_epochs: int,
@@ -72,6 +75,19 @@ def runtime_projection_policy_payload(
     maximum_approved_runtime_hours: float,
 ) -> dict[str, object]:
     """Freeze the deterministic workload policy without measured wall-clock time."""
+    profile = (
+        get_hst_workload_profile(workload_profile)
+        if workload_profile is not None
+        else next(
+            (
+                candidate
+                for candidate in WORKLOAD_PROFILES.values()
+                if dict(candidate.training_jobs_by_modality)
+                == dict(planned_training_jobs_by_modality)
+            ),
+            None,
+        )
+    )
     modalities = set(optimizer_updates_per_epoch_by_modality)
     if not modalities or modalities != set(planned_training_jobs_by_modality):
         raise ValueError(
@@ -90,6 +106,10 @@ def runtime_projection_policy_payload(
             for value in mapping.values()
         ):
             raise ValueError(f"Runtime projection {name} must contain positive integers")
+    if profile is not None and dict(planned_training_jobs_by_modality) != dict(
+        profile.training_jobs_by_modality
+    ):
+        raise ValueError("Runtime projection jobs differ from the workload profile")
     for name, value in (
         ("end-to-end overhead multiplier", end_to_end_overhead_multiplier),
         ("maximum approved runtime", maximum_approved_runtime_hours),
@@ -98,6 +118,9 @@ def runtime_projection_policy_payload(
             raise ValueError(f"Runtime projection {name} must be finite and positive")
     return {
         "schema_version": 1,
+        "workload_profile": (
+            profile.name if profile is not None else "unscoped_projection"
+        ),
         "estimate_basis": _RUNTIME_ESTIMATE_BASIS,
         "optimizer_updates_per_epoch_by_modality": {
             modality: int(optimizer_updates_per_epoch_by_modality[modality])
@@ -170,6 +193,7 @@ def resource_pilot_freeze_payload(selection: Mapping[str, object]) -> dict[str, 
 
 def project_full_training_runtime(
     *,
+    workload_profile: str | None = None,
     selected_trial_seconds: float,
     selected_trial_optimizer_updates: int,
     optimizer_updates_per_epoch_by_modality: Mapping[str, int],
@@ -179,6 +203,19 @@ def project_full_training_runtime(
     maximum_approved_runtime_hours: float,
 ) -> dict[str, object]:
     """Project serial GPU training time from the measured pilot throughput."""
+    profile = (
+        get_hst_workload_profile(workload_profile)
+        if workload_profile is not None
+        else next(
+            (
+                candidate
+                for candidate in WORKLOAD_PROFILES.values()
+                if dict(candidate.training_jobs_by_modality)
+                == dict(planned_training_jobs_by_modality)
+            ),
+            None,
+        )
+    )
     for name, value in (
         ("selected_trial_optimizer_updates", selected_trial_optimizer_updates),
         ("confirmatory_epochs", confirmatory_epochs),
@@ -190,6 +227,7 @@ def project_full_training_runtime(
     if not math.isfinite(float(selected_trial_seconds)) or selected_trial_seconds <= 0:
         raise ValueError("Runtime projection inputs must be finite and positive")
     policy = runtime_projection_policy_payload(
+        workload_profile=profile.name if profile is not None else None,
         optimizer_updates_per_epoch_by_modality=optimizer_updates_per_epoch_by_modality,
         planned_training_jobs_by_modality=planned_training_jobs_by_modality,
         confirmatory_epochs=confirmatory_epochs,
@@ -210,6 +248,9 @@ def project_full_training_runtime(
     estimated_hours = training_only_hours * float(end_to_end_overhead_multiplier)
     return {
         "schema_version": 1,
+        "workload_profile": (
+            profile.name if profile is not None else "unscoped_projection"
+        ),
         "estimate_basis": _RUNTIME_ESTIMATE_BASIS,
         "selected_trial_seconds": float(selected_trial_seconds),
         "selected_trial_optimizer_updates": int(selected_trial_optimizer_updates),

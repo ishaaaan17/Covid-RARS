@@ -20,6 +20,7 @@ from covid_audio_btp.hst_reliability import (
     hst_process_environment,
     launch_detached_run,
     load_controller_config,
+    pipeline_class_for_config,
     read_run_status,
     run_preflight,
     update_detached_run_status,
@@ -35,6 +36,10 @@ from covid_audio_btp.hst_runtime import (
 )
 from covid_audio_btp.hst_stages import build_scientific_stage_handlers
 from covid_audio_btp.hst_evidence import publish_hst_latest
+from covid_audio_btp.hst_workloads import (
+    CAPACITY_INTERNAL_FUSION_PROFILE,
+    workload_profile_from_scientific_config,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -172,7 +177,13 @@ def main() -> None:
         expected_run_id=args.expected_run_id,
     )
     config.resume = bool(args.resume)
-    pipeline = HSTPipeline(
+    scientific_config = getattr(config, "scientific_config", {})
+    pipeline_class = (
+        pipeline_class_for_config(scientific_config)
+        if isinstance(scientific_config, Mapping) and scientific_config
+        else HSTPipeline
+    )
+    pipeline = pipeline_class(
         config,
         stage_handlers=build_scientific_stage_handlers(config),
     )
@@ -271,12 +282,24 @@ def main() -> None:
     if execution_error is None:
         if args.through == "evidence_pack":
             try:
+                experiment = (
+                    scientific_config.get("experiment")
+                    if isinstance(scientific_config, Mapping)
+                    else None
+                )
+                latest_name = "latest.json"
+                if isinstance(experiment, Mapping):
+                    workload_profile = workload_profile_from_scientific_config(
+                        scientific_config
+                    )
+                    if workload_profile.name == CAPACITY_INTERNAL_FUSION_PROFILE:
+                        latest_name = "latest_capacity_internal_fusion.json"
                 publish_hst_latest(
                     run_root=pipeline.run_root,
                     evidence_manifest_path=(
                         pipeline.run_root / "evidence" / "hst_evidence_manifest.json"
                     ),
-                    latest_path=project_root / "reports" / "hst" / "latest.json",
+                    latest_path=project_root / "reports" / "hst" / latest_name,
                 )
             except BaseException as exc:
                 execution_error = exc
