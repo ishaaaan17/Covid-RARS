@@ -2430,9 +2430,14 @@ def intersect_representation_eligibility(
     scientific_config: object | None = None,
     scientific_fingerprint: str | None = None,
 ) -> pd.DataFrame:
-    """Return the exact eligible recording/modality intersection across caches."""
-    if len(indices) < 2:
-        raise ValueError("At least two representation indices are required")
+    """Return the exact eligible recording/modality intersection across caches.
+
+    A single cache is the identity case used before any optional aligned
+    representation comparator is introduced. It retains the same frozen
+    eligibility and exclusion provenance without claiming that rows are paired.
+    """
+    if not indices:
+        raise ValueError("At least one representation index is required")
     science = _resolve_scientific_fingerprint(
         scientific_config, scientific_fingerprint
     )
@@ -2489,7 +2494,7 @@ def intersect_representation_eligibility(
         axis=1,
     )
     result["paired_representation_count"] = len(sorted_representations)
-    result["paired_representation"] = True
+    result["paired_representation"] = len(sorted_representations) > 1
     result["analysis_unit_weight"] = 1.0 / len(sorted_representations)
     result["scientific_configuration_fingerprint"] = science
     result["eligibility_mapping_policy"] = _SHARED_INTERSECTION_POLICY

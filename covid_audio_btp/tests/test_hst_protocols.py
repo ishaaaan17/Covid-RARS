@@ -1439,6 +1439,50 @@ def test_representation_intersection_uses_recording_and_modality_keys() -> None:
     pd.testing.assert_frame_equal(shared, reordered)
 
 
+def test_representation_intersection_supports_audited_single_cache_identity() -> None:
+    from covid_audio_btp.hst_protocols import intersect_representation_eligibility
+
+    paper = _cache_index(20, modalities=("cough",))
+    excluded_index = paper.index[-1]
+    excluded_key = str(paper.loc[excluded_index, "recording_key"])
+    paper.loc[excluded_index, "eligible"] = False
+    paper.loc[excluded_index, "reason"] = "too_short"
+
+    shared = intersect_representation_eligibility(
+        paper,
+        scientific_config=_scientific_config(),
+    )
+
+    assert len(shared) == 19
+    assert excluded_key not in set(shared["recording_key"].astype(str))
+    assert shared["representation_count"].eq(1).all()
+    assert shared["representation_ids"].eq("paper_logmel_224").all()
+    assert shared["paired_representation_count"].eq(1).all()
+    assert shared["paired_representation"].eq(False).all()
+    assert shared["analysis_unit_weight"].eq(1.0).all()
+    assert shared["eligibility_alignment_fingerprint"].nunique() == 1
+    assert shared["eligibility_alignment_fingerprint"].str.fullmatch(
+        r"[0-9a-f]{64}"
+    ).all()
+    assert shared["eligibility_audit_payload_json"].ne("").sum() == 1
+    exclusions = shared.attrs["representation_exclusions"]
+    excluded = exclusions.loc[
+        exclusions["representation_id"].eq("paper_logmel_224")
+        & exclusions["exclusion_reason"].eq("too_short")
+    ]
+    assert len(excluded) == 1
+    assert int(excluded.iloc[0]["recording_count"]) == 1
+
+
+def test_representation_intersection_rejects_missing_cache_indices() -> None:
+    from covid_audio_btp.hst_protocols import intersect_representation_eligibility
+
+    with pytest.raises(ValueError, match="At least one representation index"):
+        intersect_representation_eligibility(
+            scientific_config=_scientific_config(),
+        )
+
+
 def test_representation_intersection_binds_source_audio_across_representations() -> None:
     from covid_audio_btp.hst_protocols import intersect_representation_eligibility
 

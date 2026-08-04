@@ -886,6 +886,7 @@ def test_spectrogram_stage_uses_shared_content_addressed_cache(
 def test_manifest_stage_keeps_coughvid_out_of_all_source_training_manifests(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    import covid_audio_btp.hst_protocols as protocols
     import covid_audio_btp.hst_stages as stages
 
     pipeline = _pipeline(tmp_path)
@@ -895,8 +896,18 @@ def test_manifest_stage_keeps_coughvid_out_of_all_source_training_manifests(
         {
             "eligible": [True, True, True],
             "dataset": ["coswara", "coswara", "coughvid"],
+            "participant_key": [
+                "coswara::p-c",
+                "coswara::p-s",
+                "coughvid::p-c",
+            ],
             "modality": ["cough", "speech", "cough"],
             "recording_key": ["coswara::c", "coswara::s", "coughvid::c"],
+            "label_binary": ["negative", "positive", "negative"],
+            "tensor_sha256": ["1" * 64, "2" * 64, "3" * 64],
+            "source_audio_sha256": ["4" * 64, "5" * 64, "6" * 64],
+            "preprocessing_hash": ["7" * 64] * 3,
+            "representation_id": ["paper_logmel_224"] * 3,
         }
     )
     cache.to_csv(cache_path, index=False)
@@ -904,11 +915,6 @@ def test_manifest_stage_keeps_coughvid_out_of_all_source_training_manifests(
     task_inputs: list[pd.DataFrame] = []
     temporal_inputs: list[pd.DataFrame] = []
     external_inputs: dict[str, pd.DataFrame] = {}
-
-    def eligibility(frame: pd.DataFrame, **_kwargs: object) -> pd.DataFrame:
-        result = frame[["recording_key", "modality"]].copy()
-        result["eligibility_alignment_fingerprint"] = "f" * 64
-        return result
 
     def frozen(frame: pd.DataFrame, *, protocol: str) -> pd.DataFrame:
         result = frame[["dataset", "modality", "recording_key"]].copy()
@@ -953,7 +959,11 @@ def test_manifest_stage_keeps_coughvid_out_of_all_source_training_manifests(
         return pd.concat(rows, ignore_index=True, sort=False)
 
     monkeypatch.setattr(stages, "scientific_configuration_fingerprint", lambda _config: "e" * 64)
-    monkeypatch.setattr(stages, "intersect_representation_eligibility", eligibility)
+    monkeypatch.setattr(
+        protocols,
+        "scientific_configuration_fingerprint",
+        lambda _config: "e" * 64,
+    )
     monkeypatch.setattr(stages, "build_protocol_matched_hst_manifest", internal_builder)
     monkeypatch.setattr(stages, "build_hst_task2_like_cough_manifest", task_builder)
     monkeypatch.setattr(stages, "build_split_policy_contrast_manifests", split_builder)
