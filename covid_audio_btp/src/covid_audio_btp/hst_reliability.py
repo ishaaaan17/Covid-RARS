@@ -319,6 +319,11 @@ class HSTPipeline:
         "full": "evidence_pack",
     }
 
+    @property
+    def capacity_mode(self) -> bool:
+        """Return True if this pipeline uses reduced capacity workload."""
+        return self._capacity_mode
+
     def __init__(
         self,
         config: HSTPipelineConfig,
@@ -329,6 +334,7 @@ class HSTPipeline:
         self.config = config
         self.stage_handlers: dict[str, StageHandler] = dict(stage_handlers or {})
         self.stage_hook = stage_hook
+        self._capacity_mode = False
         self.configuration_hash = canonical_json_sha256(config.scientific_config)
         self.initial_source_hash = self._source_hash()
         self.initial_dependency_hash = stable_file_sha256(config.dependency_lock_path)
@@ -519,6 +525,7 @@ class HSTPipeline:
             accepted_hashes=self.config.accepted_hashes,
             pip_freeze_hash=self.config.pip_freeze_hash,
             extra={"mode": self.config.mode, "device": self.config.device},
+            capacity_mode=self.capacity_mode,
         )
         fingerprint_cache[stage] = fingerprint
         return fingerprint
@@ -831,6 +838,16 @@ class HSTPipeline:
 
 class HSTCapacityInternalFusionPipeline(HSTPipeline):
     """Bounded HST controller for the frozen internal cough+speech question."""
+
+    def __init__(
+        self,
+        config: HSTPipelineConfig,
+        *,
+        stage_handlers: Mapping[str, StageHandler] | None = None,
+        stage_hook: Callable[[str], object] | None = None,
+    ) -> None:
+        super().__init__(config, stage_handlers=stage_handlers, stage_hook=stage_hook)
+        self._capacity_mode = True
 
     STAGES = (
         "preflight",

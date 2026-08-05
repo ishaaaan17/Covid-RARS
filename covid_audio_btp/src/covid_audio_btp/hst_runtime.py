@@ -1328,6 +1328,80 @@ STAGE_REQUIREMENTS: dict[str, StageRequirements] = {
     ),
 }
 
+CAPACITY_STAGE_REQUIREMENTS: dict[str, StageRequirements] = {
+    "preflight": StageRequirements(),
+    "data_contracts": StageRequirements(required_upstream=frozenset({"preflight"})),
+    "checkpoint": StageRequirements(
+        required_upstream=frozenset({"preflight"}),
+        require_checkpoints=True,
+    ),
+    "preprocess_worker_pilot": StageRequirements(
+        required_upstream=frozenset({"data_contracts"})
+    ),
+    "spectrogram_cache": StageRequirements(
+        required_upstream=frozenset(
+            {"data_contracts", "preprocess_worker_pilot"}
+        )
+    ),
+    "manifests": StageRequirements(
+        required_upstream=frozenset({"data_contracts", "spectrogram_cache"})
+    ),
+    "small_smoke": StageRequirements(
+        required_upstream=frozenset(
+            {"checkpoint", "manifests", "spectrogram_cache"}
+        ),
+        require_manifests=True,
+        require_checkpoints=True,
+        require_pip_freeze=True,
+    ),
+    "base_resource_pilot": StageRequirements(
+        required_upstream=frozenset({"small_smoke"}),
+        require_manifests=True,
+        require_checkpoints=True,
+        require_pip_freeze=True,
+    ),
+    "internal_cv": StageRequirements(
+        required_upstream=frozenset({"base_resource_pilot"}),
+        required_accepted=_FULL_ACCEPTED_HASHES,
+        require_manifests=True,
+        require_checkpoints=True,
+        require_pip_freeze=True,
+    ),
+    "fusion": StageRequirements(
+        required_upstream=frozenset({"internal_cv"}),
+        required_accepted=_FULL_ACCEPTED_HASHES,
+        require_manifests=True,
+        require_checkpoints=True,
+        require_pip_freeze=True,
+    ),
+    "gradcam": StageRequirements(
+        required_upstream=frozenset({"internal_cv"}),
+        required_accepted=_FULL_ACCEPTED_HASHES,
+        require_manifests=True,
+        require_checkpoints=True,
+        require_pip_freeze=True,
+    ),
+    "evidence_pack": StageRequirements(
+        required_upstream=frozenset({"fusion", "gradcam"}),
+        required_accepted=_FULL_ACCEPTED_HASHES,
+        require_manifests=True,
+        require_checkpoints=True,
+        require_pip_freeze=True,
+    ),
+}
+
+
+def get_stage_requirements(stage: str, *, capacity_mode: bool = False) -> StageRequirements:
+    """Return stage requirements appropriate for the pipeline profile.
+    
+    Capacity mode removes aligned_comparator dependencies for reduced workload.
+    """
+    requirements = CAPACITY_STAGE_REQUIREMENTS if capacity_mode else STAGE_REQUIREMENTS
+    if stage not in requirements:
+        raise ValueError(f"Unknown HST stage: {stage}")
+    return requirements[stage]
+
+
 
 def _nonempty_hash_mapping(
     value: Mapping[str, str] | None, *, field_name: str
@@ -1352,8 +1426,10 @@ def validate_stage_fingerprint_inputs(
     upstream_hashes: Mapping[str, str] | None,
     accepted_hashes: Mapping[str, str] | None,
     pip_freeze_hash: str | None,
+    capacity_mode: bool = False,
 ) -> None:
-    if stage not in STAGE_REQUIREMENTS:
+    requirements = get_stage_requirements(stage, capacity_mode=capacity_mode)
+    if requirements is None:
         raise ValueError(f"Unknown HST stage: {stage}")
     base_fields = {
         "configuration hash": configuration_hash,
@@ -1372,7 +1448,7 @@ def validate_stage_fingerprint_inputs(
     manifests = _nonempty_hash_mapping(manifest_hashes, field_name="manifest hashes")
     upstream = _nonempty_hash_mapping(upstream_hashes, field_name="upstream hashes")
     accepted = _nonempty_hash_mapping(accepted_hashes, field_name="accepted hashes")
-    requirements = STAGE_REQUIREMENTS[stage]
+    # requirements already set from get_stage_requirements
     if requirements.require_input_hashes and not inputs:
         raise ValueError(f"Stage {stage} requires input hashes")
     missing_upstream = sorted(requirements.required_upstream - upstream.keys())
@@ -1403,6 +1479,7 @@ def stage_fingerprint(
     accepted_hashes: Mapping[str, str] | None = None,
     pip_freeze_hash: str | None = None,
     extra: Mapping[str, object] | None = None,
+    capacity_mode: bool = False,
 ) -> str:
     validate_stage_fingerprint_inputs(
         stage,
@@ -1416,6 +1493,7 @@ def stage_fingerprint(
         upstream_hashes=upstream_hashes,
         accepted_hashes=accepted_hashes,
         pip_freeze_hash=pip_freeze_hash,
+        capacity_mode=capacity_mode,
     )
     payload = {
         "schema_version": RUNTIME_SCHEMA_VERSION,
