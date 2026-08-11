@@ -6,18 +6,18 @@
 
 **Architecture:** Use existing Coswara metadata and existing participant-level prediction CSVs. Train metadata base models on train participants, fit a small logistic combiner on validation participants for metadata-only/audio-only/metadata+audio, and evaluate all three on the same test participants. Keep this separate from the existing skipped final-fusion nested row so the new experiment only uses audio sources with real validation/test overlap.
 
-**Tech Stack:** pandas, numpy, scikit-learn logistic regression, existing `covid_audio_btp.metrics`, existing metadata feature builder.
+**Tech Stack:** pandas, numpy, scikit-learn logistic regression, existing `covid_rars.metrics`, existing metadata feature builder.
 
 ---
 
 ### Task 1: Incremental-Value Core
 
 **Files:**
-- Create: `covid_audio_btp/src/covid_audio_btp/incremental_value.py`
-- Test: `covid_audio_btp/tests/test_incremental_value.py`
+- Create: `src/covid_rars/incremental_value.py`
+- Test: `tests/test_incremental_value.py`
 
 - [ ] **Step 1: Write failing tests** for source selection, same-participant alignment, and metadata+audio delta reporting.
-- [ ] **Step 2: Run tests and verify they fail** because `covid_audio_btp.incremental_value` does not exist.
+- [ ] **Step 2: Run tests and verify they fail** because `covid_rars.incremental_value` does not exist.
 - [ ] **Step 3: Implement the core functions**:
   - `build_metadata_probability_table`
   - `build_audio_source_candidates`
@@ -28,9 +28,9 @@
 ### Task 2: CLI Runner
 
 **Files:**
-- Create: `covid_audio_btp/scripts/68_run_incremental_audio_metadata_value.py`
-- Modify: `covid_audio_btp/scripts/20_make_paper_tables.py`
-- Modify: `covid_audio_btp/scripts/24_make_experiment_manifest.py`
+- Create: `scripts/68_run_incremental_audio_metadata_value.py`
+- Modify: `scripts/20_make_paper_tables.py`
+- Modify: `scripts/24_make_experiment_manifest.py`
 
 - [ ] **Step 1: Add a CLI that reads metadata and prediction CSVs and writes metrics/predictions/summary tables.**
 - [ ] **Step 2: Register new metric and artifact paths in paper-table and manifest scripts.**

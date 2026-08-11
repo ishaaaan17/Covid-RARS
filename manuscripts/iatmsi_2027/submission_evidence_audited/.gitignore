@@ -1,0 +1,8 @@
+main.aux
+main.bbl
+main.blg
+main.log
+main.out
+rendered_*/
+figures/*_preview.png
+scripts/__pycache__/

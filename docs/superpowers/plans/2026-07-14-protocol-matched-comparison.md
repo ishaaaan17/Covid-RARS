@@ -27,14 +27,14 @@ This is the cleanest "same split as papers" check for cough-only papers. The mul
 
 ## Files
 
-- Create: `covid_audio_btp/src/covid_audio_btp/protocol_matched_cv.py`
-- Create: `covid_audio_btp/scripts/69_run_protocol_matched_cv.py`
-- Create: `covid_audio_btp/tests/test_protocol_matched_cv.py`
-- Create: `covid_audio_btp/src/covid_audio_btp/protocol_matched_comparison.py`
-- Create: `covid_audio_btp/scripts/70_make_protocol_matched_gap_table.py`
-- Create: `covid_audio_btp/tests/test_protocol_matched_comparison.py`
-- Create: `covid_audio_btp/reports/tables/protocol_matched_paper_targets.csv`
-- Create: `covid_audio_btp/docs/professor/COVID_AUDIO_PAPER_PROTOCOL_AUDIT.md`
+- Create: `src/covid_rars/protocol_matched_cv.py`
+- Create: `scripts/69_run_protocol_matched_cv.py`
+- Create: `tests/test_protocol_matched_cv.py`
+- Create: `src/covid_rars/protocol_matched_comparison.py`
+- Create: `scripts/70_make_protocol_matched_gap_table.py`
+- Create: `tests/test_protocol_matched_comparison.py`
+- Create: `reports/tables/protocol_matched_paper_targets.csv`
+- Create: `docs/professor/COVID_AUDIO_PAPER_PROTOCOL_AUDIT.md`
 
 ## Tasks
 
@@ -52,7 +52,8 @@ This is the cleanest "same split as papers" check for cough-only papers. The mul
 ## Ubuntu Commands
 
 ```bash
-cd /home/covid/Desktop/Covid-19-BTP/covid_audio_btp
+export COVID_RARS_PROJECT_ROOT="${COVID_RARS_PROJECT_ROOT:-$HOME/Desktop/Covid-RARS}"
+cd "$COVID_RARS_PROJECT_ROOT"
 source .venv/bin/activate
 
 python scripts/69_run_protocol_matched_cv.py \

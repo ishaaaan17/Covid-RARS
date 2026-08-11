@@ -4,7 +4,7 @@ This note records the non-destructive layout cleanup.
 
 ## Principle
 
-The active package remains at `covid_audio_btp/`. Historical evidence was moved out of the root into professional buckets. Original folder and file names were preserved inside those buckets wherever practical.
+The canonical active package is `src/covid_rars/`. Historical evidence is preserved in frozen or archive locations, while executable code uses only the canonical package name.
 
 ## Main Relocations
 
@@ -22,13 +22,14 @@ The active package remains at `covid_audio_btp/`. Historical evidence was moved 
 | Root `*.patch` files | `archive/patches/` |
 | `11-June-Update/` | `archive/updates/11-June-Update/` |
 | Root Gemini review exports | `archive/review_materials/` |
-| Root status and decision notes | `docs/status/` |
-| Root runbooks | `docs/runbooks/` |
+| Dated root status and decision notes | `archive/historical_status_snapshots/` |
+| Superseded root runbooks and handoff notes | `archive/historical_project_docs/` |
 | `covid_audio_btp/manuscripts/` | `manuscripts/` |
 
 ## What Was Not Changed
 
-- No active package source path was moved.
+- No research evidence was deleted.
+- Active implementation code was moved to the root-level `src/covid_rars/` package.
 - No experiment was rerun.
 - No result metric was edited.
 - No compressed evidence bundle was regenerated.
@@ -37,8 +38,29 @@ The active package remains at `covid_audio_btp/`. Historical evidence was moved 
 ## Active Entry Points After Cleanup
 
 - Root README: `README.md`
-- Active package: `covid_audio_btp/`
+- Active package: `src/covid_rars/`
 - Repository map: `docs/repository/REPOSITORY_MAP.md`
 - Artifact review guide: `ARTIFACT.md`
 - Frozen results: `results/`
 - Manuscripts: `manuscripts/`
+
+## Verification
+
+- Every one of the 495 tracked paths removed from the legacy layout has a
+  non-empty replacement in the canonical layout or an explicitly documented
+  archive location.
+- The active package, script, test, and notebook inventories remain complete:
+  97 package modules, 83 Python scripts, 98 Python test files, and 12 notebooks.
+- Package compilation, direct imports, and command-line help checks pass from
+  the repository root.
+- The full test suite passes after the move (935 passed, 1 skipped).
+- A detached checkout of the staged repository was installed in a fresh Python
+  3.12 environment from `requirements-dev.txt`. Package installation,
+  `pip check`, and the complete portable test suite passed without access to
+  local data, caches, Torch, or HST checkpoints. Tests requiring those optional
+  HST prerequisites skip explicitly and are covered by the separate Ubuntu HST
+  profile.
+
+Legacy HST writer identifiers remain in the trusted-writer allowlist so that
+checkpoints created before the package rename can still be verified. They are
+compatibility data, not active imports.

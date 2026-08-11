@@ -1,7 +1,7 @@
 # COVID Respiratory Audio Reliability Study
 
 [![Status](https://img.shields.io/badge/status-research%20artifact-blue)](#scope-and-limits)
-[![Python](https://img.shields.io/badge/python-3.10%2B-informational)](covid_audio_btp/pyproject.toml)
+[![Python](https://img.shields.io/badge/python-3.10%2B-informational)](pyproject.toml)
 [![Datasets](https://img.shields.io/badge/datasets-Coswara%20%2B%20COUGHVID-lightgrey)](#datasets)
 [![Focus](https://img.shields.io/badge/focus-validation%20reliability-green)](#main-result)
 
@@ -27,7 +27,7 @@ The best internal multimodal Coswara setting reaches `0.897` AUROC and `0.863` A
 | Symptoms-only metadata model | `0.932` AUROC | Symptoms alone are a strong shortcut predictor |
 | Early/late acoustic feature-selection overlap | `0.074` Jaccard | Selected acoustic features are non-stationary |
 
-Source ledger: [`covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_RESULTS_EVIDENCE.md`](covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_RESULTS_EVIDENCE.md)
+Source ledger: [`docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md`](docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md)
 
 ## Contribution
 
@@ -60,10 +60,12 @@ The repository contains a complete research pipeline:
 
 | Path | Purpose |
 |---|---|
-| [`covid_audio_btp/`](covid_audio_btp/) | Active Python package, scripts, notebooks, tests, and project docs |
-| [`covid_audio_btp/src/covid_audio_btp/`](covid_audio_btp/src/covid_audio_btp/) | Importable implementation |
-| [`covid_audio_btp/scripts/`](covid_audio_btp/scripts/) | Numbered command-line workflow scripts |
-| [`covid_audio_btp/tests/`](covid_audio_btp/tests/) | Pytest suite |
+| [`src/covid_rars/`](src/covid_rars/) | Importable implementation |
+| [`scripts/`](scripts/) | Numbered command-line workflow scripts |
+| [`tests/`](tests/) | Pytest suite |
+| [`docs/`](docs/) | Research briefing, professor-facing notes, and repository documentation |
+| [`data/`](data/) | Local/generated data tree; raw data follows source licenses |
+| [`reports/`](reports/) | Generated tables, figures, manifests, and final evidence notes |
 | [`results/frozen/`](results/frozen/) | Frozen experiment outputs |
 | [`results/representations/`](results/representations/) | OpenSMILE, BEATs, and PANNs representation outputs |
 | [`artifacts/bundles/`](artifacts/bundles/) | Preserved zip/tar.gz evidence bundles |
@@ -77,21 +79,21 @@ Detailed map: [`docs/repository/REPOSITORY_MAP.md`](docs/repository/REPOSITORY_M
 
 For a reviewer, collaborator, or manuscript writer, start here:
 
-1. [`covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_E2E_PROJECT_BRIEF.md`](covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_E2E_PROJECT_BRIEF.md)
-2. [`covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_RESULTS_EVIDENCE.md`](covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_RESULTS_EVIDENCE.md)
-3. [`covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md`](covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md)
-4. [`covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_RESULTS_COMPARISON.md`](covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_RESULTS_COMPARISON.md)
-5. [`covid_audio_btp/references/verified_source_registry.md`](covid_audio_btp/references/verified_source_registry.md)
+1. [`docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md`](docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md)
+2. [`docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md`](docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md)
+3. [`docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md`](docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md)
+4. [`docs/research_briefing/COVID_RARS_RESULTS_COMPARISON.md`](docs/research_briefing/COVID_RARS_RESULTS_COMPARISON.md)
+5. [`references/verified_source_registry.md`](references/verified_source_registry.md)
 6. [`ARTIFACT.md`](ARTIFACT.md)
 
 ## Main Evidence Files
 
 | Question | File to inspect |
 |---|---|
-| What are the final validation-ladder numbers? | [`covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_RESULTS_EVIDENCE.md`](covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_RESULTS_EVIDENCE.md) |
-| What explains the complete project first? | [`covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_E2E_PROJECT_BRIEF.md`](covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_E2E_PROJECT_BRIEF.md) |
-| How should results be explained in simple language? | [`covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md`](covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md) |
-| Where are source and claim checks documented? | [`covid_audio_btp/references/verified_source_registry.md`](covid_audio_btp/references/verified_source_registry.md) |
+| What are the final validation-ladder numbers? | [`docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md`](docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md) |
+| What explains the complete project first? | [`docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md`](docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md) |
+| How should results be explained in simple language? | [`docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md`](docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md) |
+| Where are source and claim checks documented? | [`references/verified_source_registry.md`](references/verified_source_registry.md) |
 | Where are frozen result folders? | [`results/frozen/`](results/frozen/) |
 | Where are representation outputs? | [`results/representations/`](results/representations/) |
 | Where are manuscript source tables and figures? | [`manuscripts/source_artifacts/`](manuscripts/source_artifacts/) |
@@ -114,7 +116,7 @@ flowchart LR
 
 ## Experiment Families
 
-The numbered scripts under [`covid_audio_btp/scripts/`](covid_audio_btp/scripts/) document the execution order. The most important families are:
+The numbered scripts under [`scripts/`](scripts/) document the execution order. The most important families are:
 
 | Family | Representative scripts |
 |---|---|
@@ -140,7 +142,10 @@ Raw datasets are not redistributed here unless permitted by their source license
 Windows PowerShell:
 
 ```powershell
-cd covid_audio_btp
+cd Covid-RARS
+git lfs install
+git lfs pull
+git submodule update --init --recursive HST
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
@@ -151,7 +156,10 @@ python -m pip install -e .
 Linux/macOS:
 
 ```bash
-cd covid_audio_btp
+cd Covid-RARS
+git lfs install
+git lfs pull
+git submodule update --init --recursive HST
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -159,21 +167,30 @@ python -m pip install -r requirements.txt
 python -m pip install -e .
 ```
 
-Optional dependency sets live inside [`covid_audio_btp/`](covid_audio_btp/), including development, GPU, and extended requirements.
+Optional dependency sets live at the repository root, including development, GPU, HST, and extended requirements.
 
 ## Test
 
+The default development profile verifies the core package. Tests that execute
+HST training or authenticate the official HST checkpoints are skipped when
+those optional prerequisites are unavailable.
+
 ```powershell
-cd covid_audio_btp
+cd Covid-RARS
 python -m pip install -r requirements-dev.txt
 python -m pytest
 ```
 
+For the full HST verification path, use Ubuntu with the declared GPU profile,
+install `requirements-hst.txt`, prepare the pinned checkpoints, and then run
+the HST tests. The exact commands and hardware assumptions are documented in
+[`docs/HST_UBUNTU_RUNBOOK.md`](docs/HST_UBUNTU_RUNBOOK.md).
+
 Quick checks from the repository root:
 
 ```powershell
-python -m compileall -q covid_audio_btp\src covid_audio_btp\scripts covid_audio_btp\tests
-python -m json.tool covid_audio_btp\notebooks\00_RUN_EVERYTHING_PUBLICATION.ipynb > $null
+python -m compileall -q src scripts tests
+python -m json.tool notebooks\00_RUN_EVERYTHING_PUBLICATION.ipynb > $null
 ```
 
 Some full experiment scripts require raw Coswara and/or COUGHVID data plus optional dependencies. The frozen results in [`results/`](results/) preserve the completed evidence outputs already present in this repository.
@@ -197,7 +214,8 @@ This repository supports three levels of review:
 | Level | What can be checked |
 |---|---|
 | Static review | Read code, docs, frozen tables, manuscripts, and source registry |
-| Unit/integration smoke review | Install package and run `python -m pytest` |
+| Core unit/integration review | Install `requirements-dev.txt` and run `python -m pytest`; optional HST runtime tests skip when prerequisites are absent |
+| HST implementation review | Follow `docs/HST_UBUNTU_RUNBOOK.md` with the pinned submodule, official checkpoints, HST requirements, and declared Ubuntu/GPU environment |
 | Full experiment reproduction | Requires raw Coswara/COUGHVID access and optional dependencies; follow dataset-source terms |
 
 The frozen artifacts are included to preserve completed evidence even when raw data cannot be redistributed.

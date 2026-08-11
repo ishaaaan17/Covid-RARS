@@ -5,8 +5,8 @@ results/representations/*/tables/*.csv filter=lfs diff=lfs merge=lfs -text
 results/representations/*/reports/*.json filter=lfs diff=lfs merge=lfs -text
 manuscripts/**/*.pdf filter=lfs diff=lfs merge=lfs -text
 manuscripts/**/*.png filter=lfs diff=lfs merge=lfs -text
-covid_audio_btp/data/outputs/metrics/external_prevalence_recalibrated_predictions.csv filter=lfs diff=lfs merge=lfs -text
-covid_audio_btp/data/outputs/metrics/domain_shift_audit_predictions.csv filter=lfs diff=lfs merge=lfs -text
-covid_audio_btp/data/outputs/metrics/ipw_sensitivity_weights.csv filter=lfs diff=lfs merge=lfs -text
-covid_audio_btp/data/outputs/metrics/domain_adaptation_baseline_predictions.csv filter=lfs diff=lfs merge=lfs -text
+data/outputs/metrics/external_prevalence_recalibrated_predictions.csv filter=lfs diff=lfs merge=lfs -text
+data/outputs/metrics/domain_shift_audit_predictions.csv filter=lfs diff=lfs merge=lfs -text
+data/outputs/metrics/ipw_sensitivity_weights.csv filter=lfs diff=lfs merge=lfs -text
+data/outputs/metrics/domain_adaptation_baseline_predictions.csv filter=lfs diff=lfs merge=lfs -text
 *.tar.gz filter=lfs diff=lfs merge=lfs -text

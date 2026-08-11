@@ -1,0 +1,417 @@
+{
+  "schema_version": 1,
+  "source": {
+    "repository": "https://github.com/icon-lab/HST.git",
+    "path": "HST",
+    "commit": "7f94ad81e392da856c7aac6d364d036c28e26c32",
+    "model_source_sha256": "5f9503df584d3a427722e0de5e1d52d1bbb79933f337181b7eeb65fcf9d2cc8f",
+    "paper_doi": "10.1109/JBHI.2023.3339700"
+  },
+  "paths": {
+    "coswara_metadata": "data/processed/metadata_with_quality.csv",
+    "coughvid_metadata": "data/processed/coughvid_metadata_hst_external.csv",
+    "coughvid_cohort_metadata": "data/processed/coughvid_metadata_compare_is10_external.csv",
+    "coughvid_raw_metadata": "data/raw/coughvid/v3_extracted/coughvid_20211012/metadata_compiled.csv",
+    "compare_is10_features": "data/processed/features_compare_is10_merged.csv",
+    "checkpoint_directory": ".cache/hst/checkpoints"
+  },
+  "checkpoints": {
+    "hst_small_imagenet": {
+      "filename": "hst_small_imagenet.pth",
+      "google_drive_file_id": "1MHSIBpM3-pa2xXKSrk5oEDTvlhIaC_M3",
+      "size_bytes": 111266629,
+      "sha256": "e7086d1b87d598120296b9a1b5f094c7587cb06f50bf609a4ca13badc95e3112"
+    },
+    "hst_base_imagenet": {
+      "filename": "hst_base_imagenet.pth",
+      "google_drive_file_id": "1jol7869ixS77FyoAXzb_m3oJGTtKuOVO",
+      "size_bytes": 197063145,
+      "sha256": "f39f001d5f8cd90cb78d45612486202a4ea280e23df0b2c1d6ce35d96b30cce4"
+    }
+  },
+  "source_checkpoint": {
+    "smoke": "hst_small_imagenet",
+    "confirmatory": "hst_base_imagenet",
+    "strict_backbone_load": true,
+    "replace_classification_head": true,
+    "classification_head_outputs": 2
+  },
+  "class_to_index": {
+    "negative": 0,
+    "positive": 1
+  },
+  "architecture": {
+    "hst_small": {
+      "img_size": 224,
+      "h": 4,
+      "img_channel": 3,
+      "num_labels": 2,
+      "d": 96,
+      "num_blocks": [1, 1, 3, 1],
+      "num_attention_heads": [3, 6, 12, 24],
+      "win_size": 7,
+      "mlp_ratio": 4.0,
+      "use_bias": true,
+      "dropout_rate": 0.0,
+      "attn_dropout_rate": 0.0,
+      "drop_path_rate": 0.1,
+      "use_checkpoint": false
+    },
+    "hst_base": {
+      "img_size": 224,
+      "h": 4,
+      "img_channel": 3,
+      "num_labels": 2,
+      "d": 96,
+      "num_blocks": [1, 1, 9, 1],
+      "num_attention_heads": [3, 6, 12, 24],
+      "win_size": 7,
+      "mlp_ratio": 4.0,
+      "use_bias": true,
+      "dropout_rate": 0.0,
+      "attn_dropout_rate": 0.0,
+      "drop_path_rate": 0.1,
+      "use_checkpoint": false
+    }
+  },
+  "experiment": {
+    "name": "hst_integrated_reliability",
+    "primary_model": "hst_base",
+    "smoke_model": "hst_small",
+    "primary_modalities": ["cough", "speech"],
+    "secondary_modalities": ["breath"],
+    "project_seeds": [1, 2, 5, 12, 40, 52, 72, 2002, 4002, 6002],
+    "seed_provenance": "HST/baselines released seed lists",
+    "test_evaluation_policy": "single_nonadaptive_pass_of_prespecified_locked_endpoints_after_validation_freeze"
+  },
+  "performance_objectives": {
+    "metric": "participant_auroc",
+    "protocol": "aligned_same_protocol_internal",
+    "engineering_targets_not_guarantees": true,
+    "test_set_is_not_a_stopping_rule": true,
+    "references": {
+      "cough": 0.868,
+      "breath": 0.842,
+      "speech": 0.891,
+      "cough_speech_fusion": 0.897
+    }
+  },
+  "datasets": {
+    "coswara": {
+      "role": "development_and_internal_evaluation",
+      "label_column": "label_binary",
+      "release_id_from_data_contract": true
+    },
+    "coughvid": {
+      "role": "cough_only_external_evaluation",
+      "release_id": "coughvid-v3-derived-cohort-from-zenodo-7024894",
+      "source_release_reference": "COUGHVID-v3 Zenodo 7024894",
+      "metadata_input_level": "derived_processed_csv",
+      "raw_release_membership_reconstructed": false,
+      "identity_source": "recording_uuid",
+      "subject_linkage_available": false,
+      "primary_label_column": "status_SSL",
+      "primary_label_provenance": "semi_supervised_status",
+      "source_manifest_sha256_from_data_contract": true,
+      "raw_status_sensitivity": {
+        "label_column": "status",
+        "label_provenance": "raw_self_report",
+        "execution": "relabel_frozen_external_predictions",
+        "selection_use": false,
+        "primary_blocking": false,
+        "reason": "The same frozen external probabilities and source-validation thresholds are rescored on the supervised raw-status overlap."
+      },
+      "event_quality_sensitivity": {
+        "representation": "cough_event_reconstruction",
+        "minimum_snr": 0.8,
+        "execution": "deferred_missing_checksum_pinned_algorithm",
+        "selection_use": false,
+        "primary_blocking": false,
+        "reason": "The official HST source does not provide a checksum-pinnable cough-event or SNR implementation; no paper-exact event claim is permitted."
+      }
+    }
+  },
+  "preprocessing": {
+    "representation": "paper_logmel_224",
+    "sample_rate": 22050,
+    "res_type": "soxr_hq",
+    "mono": true,
+    "trim": {
+      "top_db": 60,
+      "frame_length": 2205,
+      "hop_length": 1102,
+      "minimum_duration_seconds_exclusive": 2.0
+    },
+    "stft": {
+      "n_fft": 2048,
+      "win_length": 2048,
+      "hop_length": 1920,
+      "window": "hann_periodic",
+      "center": false,
+      "power": 2.0
+    },
+    "mel": {
+      "n_mels": 224,
+      "fmin": 0.0,
+      "fmax": 11025.0,
+      "htk": false,
+      "norm": "slaney"
+    },
+    "decibels": {
+      "reference": "maximum",
+      "top_db": 80.0,
+      "output_range": [0.0, 1.0]
+    },
+    "image": {
+      "height": 224,
+      "width": 224,
+      "stored_frequency_order": "high_to_low",
+      "display_origin": "upper",
+      "resize": "bilinear_antialiased",
+      "channels": 3,
+      "dtype": "float32",
+      "normalization_mean": [0.5, 0.5, 0.5],
+      "normalization_std": [0.5, 0.5, 0.5]
+    },
+    "released_code_sensitivity": {
+      "representation": "released_linear_specgram_224",
+      "execution": "deferred_optional_extension",
+      "selection_use": false,
+      "primary_blocking": false,
+      "reason": "The released plotting path conflicts with the paper-described Mel input and is excluded from the primary 50-job run; its deterministic renderer remains available for a separately accepted optional extension."
+    },
+    "released_reference_rendering": {
+      "source_file": "HST/wave2spectogram.py",
+      "source_commit": "7f94ad81e392da856c7aac6d364d036c28e26c32",
+      "backend": "matplotlib_agg",
+      "figure_inches": [8.0, 8.0],
+      "figure_dpi": 100.0,
+      "cmap": "gray",
+      "nfft": 2048,
+      "noverlap": 128,
+      "mode": "default",
+      "scale": "dB",
+      "axis": "off",
+      "resize": "bilinear_antialiased",
+      "analysis_scope": "one_fold_predeclared_sensitivity"
+    }
+  },
+  "augmentation": {
+    "training_only": true,
+    "rotation_degrees": [-20.0, 20.0],
+    "rotation_interpolation": "nearest",
+    "rotation_expand": false,
+    "rotation_fill": 0.0,
+    "horizontal_flip_probability": 0.5,
+    "vertical_flip_probability": 0.0,
+    "test_time_augmentation": false,
+    "apply_before_normalization": true
+  },
+  "sampling": {
+    "strategy": "hierarchical_class_participant_recording",
+    "training_only": true,
+    "class_sampling": "uniform",
+    "participant_sampling_within_class": "seeded_round_robin_uniform",
+    "recording_sampling_within_participant": "uniform",
+    "draws_per_class": "maximum_class_participant_count",
+    "validation_or_test_balancing": false
+  },
+  "training": {
+    "optimizer": "AdamW",
+    "loss": "unweighted_cross_entropy",
+    "effective_batch_size": 8,
+    "physical_batch_size_candidates": [8, 4, 2],
+    "max_epochs": 100,
+    "train_all_epochs": true,
+    "learning_rate": 0.00001,
+    "weight_decay": 0.00000001,
+    "gradient_clip_type": "norm",
+    "gradient_clip_norm": 0.1,
+    "selection_metric": "participant_auroc",
+    "selection_tie_breakers": ["participant_auprc", "participant_nll", "earlier_epoch"],
+    "selection_threshold": 0.5,
+    "early_stopping": false,
+    "scheduler": {
+      "name": "OneCycleLR",
+      "anneal_strategy": "cos",
+      "pct_start": 0.3,
+      "div_factor": 25.0,
+      "final_div_factor": 10000.0,
+      "step_unit": "successful_optimizer_update"
+    },
+    "gradient_accumulation": {
+      "normalize_by_actual_sample_count": true,
+      "flush_final_partial_group": true,
+      "finite_gradient_gate": true
+    },
+    "amp_acceptance": {
+      "max_abs_probability_difference": 0.01,
+      "max_relative_cross_entropy_loss_difference": 0.01,
+      "pilot_optimizer_updates": 100,
+      "max_skipped_optimizer_updates": 0
+    },
+    "determinism": {
+      "cudnn_benchmark": false,
+      "deterministic_algorithms": true,
+      "seed_components": ["fold_seed", "epoch", "participant_key", "recording_key", "draw_id"]
+    }
+  },
+  "optimizer": {
+    "name": "AdamW",
+    "loss": "unweighted_cross_entropy",
+    "learning_rate": 0.00001,
+    "weight_decay": 0.00000001,
+    "gradient_clip_type": "norm",
+    "gradient_clip_norm": 0.1,
+    "scheduler": {
+      "name": "OneCycleLR",
+      "anneal_strategy": "cos",
+      "pct_start": 0.3,
+      "div_factor": 25.0,
+      "final_div_factor": 10000.0,
+      "step_unit": "successful_optimizer_update"
+    }
+  },
+  "stopping_rule": {
+    "confirmatory_epochs": 100,
+    "early_stopping": false,
+    "selection_metric": "participant_auroc",
+    "selection_tie_breakers": ["participant_auprc", "participant_nll", "earlier_epoch"],
+    "held_out_test_opened_once_after_validation_freeze": true
+  },
+  "participant_aggregation": {
+    "segment_to_recording": "arithmetic_mean_probability",
+    "recording_to_participant": "arithmetic_mean_probability",
+    "analysis_unit": "participant_key",
+    "participant_label_must_be_invariant": true
+  },
+  "thresholding": {
+    "checkpoint_selection_threshold": 0.5,
+    "operating_threshold": "validation_balanced_accuracy",
+    "threshold_frozen_before_test": true,
+    "fixed_sensitivity_target": 0.9
+  },
+  "metrics": {
+    "primary": "participant_auroc",
+    "secondary": [
+      "participant_auprc",
+      "balanced_accuracy",
+      "f1",
+      "sensitivity",
+      "specificity",
+      "brier",
+      "ece",
+      "nll"
+    ],
+    "confidence_interval": "participant_or_fold_cluster_bootstrap",
+    "confidence_level": 0.95
+  },
+  "calibration": {
+    "ece_bins": 10,
+    "probability_clip_epsilon": 0.000001,
+    "source_validation_platt_only": true,
+    "target_domain_recalibration_in_primary": false
+  },
+  "protocols": {
+    "repeated_participant_holdout": {
+      "train_fraction": 0.70,
+      "validation_fraction": 0.10,
+      "test_fraction": 0.20,
+      "repeats": 10
+    },
+    "calendar_mixed_control": {
+      "train_fraction": 0.60,
+      "validation_fraction": 0.20,
+      "test_fraction": 0.20,
+      "date_balanced_candidate_count": 1000,
+      "model_seed": 42
+    },
+    "early_to_late": {
+      "train_fraction": 0.60,
+      "validation_fraction": 0.20,
+      "test_fraction": 0.20,
+      "ordered_by": "participant_recording_date",
+      "model_seed": 42
+    },
+    "late_to_early": {
+      "train_fraction": 0.60,
+      "validation_fraction": 0.20,
+      "test_fraction": 0.20,
+      "ordered_by": "participant_recording_date_reverse",
+      "model_seed": 42
+    },
+    "external": {
+      "source": "coswara",
+      "target": "coughvid",
+      "modality": "cough"
+    }
+  },
+  "comparator": {
+    "feature_table": "features_compare_is10_merged.csv",
+    "feature_count": 10147,
+    "selection_scope": "fold_training_only_per_modality_mean",
+    "ranker": "lightgbm",
+    "selected_feature_count": 800,
+    "model_names": ["lightgbm_smote_f80", "svc_rbf_f60", "catboost_smote_f80", "xgboost_smote_f80"],
+    "ensemble_cap": 5,
+    "effective_ensemble_name": "top_4_validation_ensemble",
+    "branch_selection": ["validation_auroc", "validation_auprc", "model_name"],
+    "primary_endpoint": "validation_selected_candidate",
+    "model_bank_test_rows": "secondary_prespecified",
+    "test_results_can_influence_selection": false,
+    "held_out_evaluation_policy": "single_nonadaptive_pass_after_validation_freeze"
+  },
+  "fusion": {
+    "primary_modalities": ["cough", "speech"],
+    "primary_cohort": "joint_complete_case",
+    "primary_method": "uniform_mean",
+    "primary_weights": {
+      "cough": 0.5,
+      "speech": 0.5
+    },
+    "secondary_methods": {
+      "legacy_validation_weighted_auprc": {
+        "raw_weight": "max(validation_auprc - 0.5, 0.01)",
+        "normalization": "sum_to_one"
+      },
+      "stacked_logistic_validation": {
+        "class_weight": "balanced",
+        "penalty": "l2",
+        "C": 1.0,
+        "max_iter": 2000,
+        "random_state": 42
+      }
+    },
+    "hybrid_uniform_weights": {
+      "hst_cough": 0.25,
+      "hst_speech": 0.25,
+      "comparator_cough": 0.25,
+      "comparator_speech": 0.25
+    }
+  },
+  "reporting": {
+    "analysis_unit": "participant",
+    "internal_analysis_unit": "coswara_participant",
+    "external_analysis_unit": "coughvid_recording_uuid",
+    "external_subject_linkage_available": false,
+    "bootstrap_replicates": 1000,
+    "bootstrap_seed": 42,
+    "confidence_level": 0.95,
+    "ece_bins": 10,
+    "fixed_sensitivity": 0.90,
+    "decision_thresholds": [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50],
+    "probability_clip_epsilon": 0.000001,
+    "primary_estimand": "mean_repeated_participant_auroc_delta_hst_minus_aligned_comparator_complete_case_uniform_cough_speech",
+    "primary_estimand_id": "primary_hst_vs_comparator_uniform_cough_speech_auroc",
+    "delong_scope": "single_paired_participant_set_only"
+  },
+  "runtime": {
+    "max_concurrent_gpu_jobs": 1,
+    "maximum_projected_serial_gpu_hours": 168.0,
+    "end_to_end_overhead_multiplier": 1.5,
+    "aligned_comparator_stage": "serialized_cpu",
+    "atomic_checkpoints": true,
+    "resume_from_optimizer_safe_boundary": true,
+    "heartbeat_seconds": 60
+  }
+}

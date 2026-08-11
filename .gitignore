@@ -1,6 +1,7 @@
 # Python caches and local environments
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -20,3 +21,79 @@ Thumbs.db
 # Local temporary scratch folders
 tmp/
 temp/
+
+# Local environments and caches
+.venv-monitor/
+.cache/
+archive/local_state/
+
+# Local datasets and generated experiment output
+/data/raw/
+/data/interim/
+/data/processed/
+/data/outputs/
+/reports/figures/
+/reports/tables/
+/reports/hst/
+*.pt
+*.pth
+*.joblib
+*.pkl
+
+# Local logs and runtime output
+*.log
+logs/
+
+# Local installers/downloads
+miktex_setup.exe
+install_tinytex.bat
+paper_manual_download/
+tools/local_installers/
+tools/local_run_helpers/
+archive/local_paper_downloads/
+
+# Root-level one-off run/debug helpers
+/apply_*.py
+/auto_full_after_pilot.py
+/check_*.py
+/clean_slate.py
+/clear_lock_and_run.py
+/debug_*.py
+/find_*.py
+/fix_*.py
+/force_full_now.py
+/get_error.py
+/go_full_now.py
+/install_*.py
+/launch_and_monitor.py
+/monitor_*.py
+/quick_check.py
+/run_final_smoke.py
+/run_hst_*.py
+/run_interactive.py
+/run_smoke_*.py
+/setup_venv_hst.py
+/ssh_*.py
+/start_capacity_*.py
+/status_*.py
+/sync_*.py
+/verify_success.py
+/what_happened.py
+
+# LaTeX build products
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+
+# Manuscript render/audit scratch
+manuscripts/**/_audit_render/
+manuscripts/_render_check/
+manuscripts/**/rendered_*/
+manuscripts/**/tmp/
+manuscripts/**/*_preview.png
+manuscripts/**/*_extracted.txt
+manuscripts/**/iatmsi_text.txt

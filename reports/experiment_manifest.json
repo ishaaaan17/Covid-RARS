@@ -1,0 +1,1022 @@
+{
+  "created_at_utc": "2026-08-10T21:28:04.570761+00:00",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python_executable": "C:\\Users\\nhnis\\Desktop\\Covid-RARS\\.venv\\Scripts\\python.exe",
+  "config": {
+    "run_name": "covid_audio_publication_run",
+    "seed": 42
+  },
+  "packages": {
+    "python": "3.12.10",
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.0",
+    "librosa": "0.11.0",
+    "soundfile": "0.14.0",
+    "torch": "2.13.0+cpu",
+    "torchaudio": "unavailable",
+    "xgboost": "unavailable",
+    "lightgbm": "unavailable",
+    "catboost": "unavailable",
+    "opensmile": "unavailable",
+    "shap": "unavailable"
+  },
+  "artifacts": [
+    {
+      "path": "data/interim/coswara_index.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/processed/metadata_clean.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/processed/audio_quality.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/processed/features_mfcc.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/processed/features_strong_acoustic.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/ml_baseline_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/calibration_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/fusion_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/quality_weighted_fusion_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/cross_dataset_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/external_model_grid_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/external_model_grid_bootstrap_ci.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/coughvid_internal_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/coughvid_internal_bootstrap_ci.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/metadata_confounding_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/metadata_confounding_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "reports/tables/metadata_confounding_feature_importance.csv",
+      "exists": true,
+      "size_bytes": 13070,
+      "sha256": "7b243a61495e1278da012fbf2d14e88783dd989df3ca1a5e62f4082f01d830e0"
+    },
+    {
+      "path": "reports/tables/metadata_confounding_group_summary.csv",
+      "exists": true,
+      "size_bytes": 1367,
+      "sha256": "d2fa18ad65520535dbe9a93c0707ccd456ee60ac7995b508c85c7ed87183ecb6"
+    },
+    {
+      "path": "reports/tables/metadata_confounding_subgroup_availability.csv",
+      "exists": true,
+      "size_bytes": 236,
+      "sha256": "c562790ddb2515c43edcc736c6016512767e2922312d27fc9c65160ad8bc3a13"
+    },
+    {
+      "path": "reports/tables/metadata_confounding_subgroup_breakdown.csv",
+      "exists": true,
+      "size_bytes": 3781,
+      "sha256": "a46d1db90aa90cbba1942fc6dfeb9246ecef5c589ab9fe20aec1d1b851889764"
+    },
+    {
+      "path": "reports/tables/metadata_confounding_subgroup_metrics.csv",
+      "exists": true,
+      "size_bytes": 13587,
+      "sha256": "8839956f42ce759e5200a04756fb69c9f02bfc922d68468504e22bca2cbe8acb"
+    },
+    {
+      "path": "reports/tables/metadata_confounding_shuffle_label_sanity.csv",
+      "exists": true,
+      "size_bytes": 1829,
+      "sha256": "a1be233a15f8a1f394fcf3f5ef57ee037194c95b52681e0f96f546753a7305f7"
+    },
+    {
+      "path": "reports/tables/metadata_confounding_shuffle_retrain_sanity.csv",
+      "exists": true,
+      "size_bytes": 555,
+      "sha256": "7a774662cb53fb0a2b5d889b4ea0a386e95495f162e11d4d869e124b0fe841dd"
+    },
+    {
+      "path": "data/outputs/metrics/metadata_permutation_importance_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/metadata_permutation_importance_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "reports/tables/metadata_confounding_permutation_importance.csv",
+      "exists": true,
+      "size_bytes": 11439,
+      "sha256": "5f69089c6a0f2b133a99e20d97400f00e14b9df2f77f0b0fee584c91748f55e3"
+    },
+    {
+      "path": "reports/tables/metadata_confounding_permutation_group_summary.csv",
+      "exists": true,
+      "size_bytes": 1283,
+      "sha256": "974846ab7473d343d5b32c4f715c739e79d96b36602ca499e79e1fb4bf21af2e"
+    },
+    {
+      "path": "data/outputs/metrics/confounding_controlled_audio_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/confounding_controlled_audio_weights.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/confounding_controlled_audio_bootstrap_ci.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "reports/tables/confounding_controlled_balance.csv",
+      "exists": true,
+      "size_bytes": 3337,
+      "sha256": "375e495c72814a25af76bf6be07ca9373666a075bb48bcc0775f626aab24f3fa"
+    },
+    {
+      "path": "reports/tables/calibration_under_shift_bins.csv",
+      "exists": true,
+      "size_bytes": 131642,
+      "sha256": "adf2271925b963ca8e805e310fae1cf7a33b0374976f531d2bdc46fc18fb6104"
+    },
+    {
+      "path": "reports/tables/calibration_under_shift_summary.csv",
+      "exists": true,
+      "size_bytes": 26981,
+      "sha256": "58d26ac0207a5a24cd42c4e4b16c72cecd20f4792f199481746c397e7ab89b52"
+    },
+    {
+      "path": "reports/tables/final_validation_bootstrap_ci.csv",
+      "exists": true,
+      "size_bytes": 545137,
+      "sha256": "7e473f78ef9fd1d0d36890fbafb3187cbbd02ad8adb35827260c45a389ce2e07"
+    },
+    {
+      "path": "reports/tables/final_validation_delta_bootstrap_ci.csv",
+      "exists": true,
+      "size_bytes": 31301,
+      "sha256": "4433b1e68d33c972c13cedc67910ad46175836dc8c0c2360a0648ddc1aeb4c6b"
+    },
+    {
+      "path": "reports/tables/final_validation_calibration_summary.csv",
+      "exists": true,
+      "size_bytes": 161976,
+      "sha256": "f22149d94accf11643755471fe441fe3f200103515953b847473504eacf08a80"
+    },
+    {
+      "path": "reports/tables/final_validation_calibration_bins.csv",
+      "exists": true,
+      "size_bytes": 1253978,
+      "sha256": "67d22cb8d66aecf65cc3ba4169b2c9aa10e8741e46d76d4755eff7cbc5a28a43"
+    },
+    {
+      "path": "reports/tables/final_validation_shuffle_label_sanity.csv",
+      "exists": true,
+      "size_bytes": 318324,
+      "sha256": "238b9ca5c9817110e1942d4b6b0013de34c6264fc9dbc5c0fcca8e6bf306edd6"
+    },
+    {
+      "path": "reports/tables/final_validation_fixed_sensitivity_operating_points.csv",
+      "exists": true,
+      "size_bytes": 179031,
+      "sha256": "1369453f560af8581a9c71e8c7f0734703bb0e96200976302d3116c9dc85fc4f"
+    },
+    {
+      "path": "reports/tables/audio_metadata_residual_correlation.csv",
+      "exists": true,
+      "size_bytes": 580,
+      "sha256": "8c43142f3d4b7913198a0ce36f10ba037a66d60001a3173455ccedec851a0b72"
+    },
+    {
+      "path": "reports/tables/coughvid_partial_recalibration_metrics.csv",
+      "exists": true,
+      "size_bytes": 5002,
+      "sha256": "0865980457803cd97352f468fb70c93052741c5bdc8ca0b5906467044b879bd7"
+    },
+    {
+      "path": "data/outputs/metrics/coughvid_partial_recalibration_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "reports/tables/reviewer_specification_curve.csv",
+      "exists": true,
+      "size_bytes": 86460,
+      "sha256": "18c0fc64865b036a73601976f5324b4203d4c82de4394ba4435a0cbf700c1bb9"
+    },
+    {
+      "path": "reports/tables/reviewer_quality_label_month_correlation.csv",
+      "exists": true,
+      "size_bytes": 21994,
+      "sha256": "1baf2df2d92477b1f59876c068e7ad3e19a7160ba9c02af0e1a7e4b962607237"
+    },
+    {
+      "path": "reports/tables/reviewer_decision_curve_analysis.csv",
+      "exists": true,
+      "size_bytes": 1455331,
+      "sha256": "2d9beb994b8004c51d6ec2b78c432a5f803e4891aa4b97a36a5361bee8b3b9a2"
+    },
+    {
+      "path": "reports/tables/reviewer_duration_shortcut_correlation.csv",
+      "exists": true,
+      "size_bytes": 80316,
+      "sha256": "aecce6397bbd46b9ffc5a470c3227886b1207888d5755c0fddebd3d65430a2ec"
+    },
+    {
+      "path": "reports/tables/reviewer_performance_equity_subgroups.csv",
+      "exists": true,
+      "size_bytes": 1452905,
+      "sha256": "6efca129ef19b2cd31888ab979b60160cb7f2aef1a8b667423b262a12ef61a85"
+    },
+    {
+      "path": "reports/tables/reviewer_nested_metadata_audio_comparison.csv",
+      "exists": true,
+      "size_bytes": 161,
+      "sha256": "fbe977bfe3484ee51f85e67095ca31a6caaf300908af78ef91982f69b42c2eae"
+    },
+    {
+      "path": "data/outputs/metrics/reviewer_nested_metadata_audio_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/reviewer_incremental_audio_metadata_metrics.csv",
+      "exists": true,
+      "size_bytes": 28611,
+      "sha256": "a096a8ce53806fb393c710f1be5235f718f5a47a2f3bc6fc25ba6443a7318662"
+    },
+    {
+      "path": "data/outputs/metrics/reviewer_incremental_audio_metadata_predictions.csv",
+      "exists": true,
+      "size_bytes": 1098532,
+      "sha256": "bd3e058aeacc30f8108896eae68a7355f5808569ad0d983f18c6a1a73be7f7c4"
+    },
+    {
+      "path": "reports/tables/reviewer_incremental_audio_metadata_candidates.csv",
+      "exists": true,
+      "size_bytes": 5740,
+      "sha256": "d82dbe8758330b44411bf40f0c2e27f3c5ffa19f7fb819f60268f8138707fc0d"
+    },
+    {
+      "path": "reports/tables/reviewer_external_model_family_transfer_summary.csv",
+      "exists": true,
+      "size_bytes": 1867,
+      "sha256": "c73221ab936fb2a9417cd89a1e91515502b9ca5cc01a4c567a2a7432a18c860c"
+    },
+    {
+      "path": "reports/tables/reviewer_support_overlap_positivity.csv",
+      "exists": true,
+      "size_bytes": 653,
+      "sha256": "dc1a41eefa050d7e952db9e4ff3b0d1c968edb6b846926fdd301b25c015d4caa"
+    },
+    {
+      "path": "reports/tables/reviewer_feature_selection_stability.csv",
+      "exists": true,
+      "size_bytes": 3310,
+      "sha256": "7e25118a5d42cd57b3c67520d2c331ff8e108dca97597506c8fe666434e6a543"
+    },
+    {
+      "path": "reports/tables/reviewer_matched_cohort_quality.csv",
+      "exists": true,
+      "size_bytes": 3564,
+      "sha256": "dcc4b4383faf0b2bc9434a2cceb23f5c2916416501557a6002b4c749af1e9730"
+    },
+    {
+      "path": "reports/tables/reviewer_context_control_exposure.csv",
+      "exists": true,
+      "size_bytes": 1018,
+      "sha256": "c148e0d6bac45507ba46d3aa98658b397e1ed8e313f2d97e7e0f723e25859b5f"
+    },
+    {
+      "path": "reports/tables/reviewer_paired_delong_auc_comparisons.csv",
+      "exists": true,
+      "size_bytes": 3440,
+      "sha256": "5160dd3567392958b6a7d2c2a72b04b7b70b8863a658dbe31891a6ab46ea4833"
+    },
+    {
+      "path": "reports/tables/reviewer_label_construction_audit.csv",
+      "exists": true,
+      "size_bytes": 801,
+      "sha256": "4ee68e0f1b5c93f668512ffa550a2b46abd2c14b1bb93e64b872bf64569f0de9"
+    },
+    {
+      "path": "reports/figures/reviewer_specification_curve.svg",
+      "exists": true,
+      "size_bytes": 61031,
+      "sha256": "55f9f56a71fd4bbfa3f3b6ac2441bc0c561c925839c97a0e908839f8f6b1e2f6"
+    },
+    {
+      "path": "reports/figures/reviewer_decision_curve_analysis.svg",
+      "exists": true,
+      "size_bytes": 100193,
+      "sha256": "50161a60a87555d0398f782f6f468fd9a24bc699e95e09da54de016a101805d4"
+    },
+    {
+      "path": "reports/final/LABEL_CONSTRUCTION_AUDIT.md",
+      "exists": true,
+      "size_bytes": 867,
+      "sha256": "88f572286aa865407606d1f6aa17474e5b9e0f5db515419be5b4a168335c957c"
+    },
+    {
+      "path": "reports/final/MULTIPLICITY_AND_ANALYSIS_SCOPE.md",
+      "exists": true,
+      "size_bytes": 715,
+      "sha256": "9f2af2bf3e5c7d3c68633ff093ee83ff593c5c8fa82c088552e3d96b52835a4a"
+    },
+    {
+      "path": "reports/figures/final_validation_calibration_curves.svg",
+      "exists": true,
+      "size_bytes": 114019,
+      "sha256": "cca89896c664d04c4db2ebd223e3ec7db52b824a4e6ef7ddfb032c13e44121c1"
+    },
+    {
+      "path": "reports/tables/clinical_operating_points.csv",
+      "exists": true,
+      "size_bytes": 157562,
+      "sha256": "a5a606e0537526beafb2809738a368d02102bb9385e758607cf5e929cb91a56c"
+    },
+    {
+      "path": "data/outputs/metrics/domain_shift_audit_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/domain_shift_audit_predictions.csv",
+      "exists": true,
+      "size_bytes": 1562771,
+      "sha256": "7c8f52e21fe183fc7c9d8ddff5748f1d2eebdc8f17ceb773dd76710702d16918"
+    },
+    {
+      "path": "reports/tables/domain_shift_feature_importance.csv",
+      "exists": true,
+      "size_bytes": 243812,
+      "sha256": "c61ef157bcaa8aaf13fab6dd167b9b26933da7117ba487d2698f218cfc2100f6"
+    },
+    {
+      "path": "data/outputs/metrics/domain_adaptation_baseline_metrics.csv",
+      "exists": true,
+      "size_bytes": 5602,
+      "sha256": "6d9ff7f466183adb455613cc60dcd3e8992428effe4a413875c00941e60cf531"
+    },
+    {
+      "path": "data/outputs/metrics/domain_adaptation_baseline_predictions.csv",
+      "exists": true,
+      "size_bytes": 23992427,
+      "sha256": "f3f913f8322b56339aa4c23efc603431877cf2fdc5c4e29a9693591a69b8afea"
+    },
+    {
+      "path": "reports/tables/domain_adaptation_mmd.csv",
+      "exists": true,
+      "size_bytes": 1062,
+      "sha256": "f02669909699e09d70b6d7508f0bece38ddd4161bf7ffed67bd6a6d991b337bb"
+    },
+    {
+      "path": "data/outputs/metrics/ipw_sensitivity_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/ipw_sensitivity_weights.csv",
+      "exists": true,
+      "size_bytes": 537174,
+      "sha256": "7518b91a6db2e0500178d4ff5c8dee946f87d3f32f9f191abebee2a70de17dce"
+    },
+    {
+      "path": "reports/tables/ipw_sensitivity_balance.csv",
+      "exists": true,
+      "size_bytes": 61958,
+      "sha256": "c3f4da57aa260ca7dab9a4c42042c1c87aae4a174d282ff6cac110827ffda30e"
+    },
+    {
+      "path": "reports/tables/external_prevalence_recalibration.csv",
+      "exists": true,
+      "size_bytes": 77074,
+      "sha256": "13c33e8e67081147f4e19050eea8a0de35a2da28e1848788d00e7980e82a258c"
+    },
+    {
+      "path": "data/outputs/metrics/external_prevalence_recalibrated_predictions.csv",
+      "exists": true,
+      "size_bytes": 195690660,
+      "sha256": "69c5b089d50252811ca4436a795a3a5fe355cbf7541a3ecdb309a8a473efe8da"
+    },
+    {
+      "path": "reports/tables/paired_bootstrap_comparisons.csv",
+      "exists": true,
+      "size_bytes": 4955,
+      "sha256": "3fad2f2e787152ea6e6cf7760e2d5eab94d46ade53e82fed86c87ed3f6cdb95c"
+    },
+    {
+      "path": "reports/tables/publication_evidence_matrix.csv",
+      "exists": true,
+      "size_bytes": 12690,
+      "sha256": "dbbf270240783c51c20d6c2c3b6648acd90b2904460ebc946c237ac44def930c"
+    },
+    {
+      "path": "reports/tables/publication_evidence_matrix.md",
+      "exists": true,
+      "size_bytes": 13060,
+      "sha256": "48304aa31896fbfd72f15ac5c376f946d814861b02ccd8f38a9609b66cac0ff8"
+    },
+    {
+      "path": "reports/tables/related_paper_comparison.csv",
+      "exists": true,
+      "size_bytes": 12587,
+      "sha256": "2e4a64fdfdd14942b668bb963604974c4f8683e976bbdc0f3c74c179988f53dd"
+    },
+    {
+      "path": "reports/tables/related_paper_comparison.md",
+      "exists": true,
+      "size_bytes": 13231,
+      "sha256": "6a0c5cbbd97c78ea56863b0026fc2a6e9a23d6c6749ae1065adc628da1896f03"
+    },
+    {
+      "path": "reports/final/COVID_RARS_PUBLICATION_RESULTS_REPORT.md",
+      "exists": true,
+      "size_bytes": 28805,
+      "sha256": "2d57d24b67826139d199ebc46c7ccf0c2c258f5fd11ae93bb0fc0e02a469e517"
+    },
+    {
+      "path": "reports/final/COVID_RARS_PUBLICATION_RESULTS_SUMMARY.md",
+      "exists": true,
+      "size_bytes": 900,
+      "sha256": "6b4a3412749ec9030d10ec9a7a5493afd0bf6cb06cd5afa01c3da1c29ae2bf14"
+    },
+    {
+      "path": "reports/tables/manuscript_demographic_protocol_linear_shap.csv",
+      "exists": true,
+      "size_bytes": 7955,
+      "sha256": "b57f601ea1559a8c78e538a367be16932761ddd0785953c151e1c037dc2f6020"
+    },
+    {
+      "path": "reports/tables/manuscript_ipw_residual_smd.csv",
+      "exists": true,
+      "size_bytes": 6267,
+      "sha256": "fe33ea53edeb6fad8a64ada8b25f4925c11746db7edd0fcc4d071e344c978284"
+    },
+    {
+      "path": "reports/tables/manuscript_external_auprc_lift.csv",
+      "exists": true,
+      "size_bytes": 714,
+      "sha256": "7683ecfdf6a296fc08dc6ed1353e6e764eacf97062a435d38a96df5ac74734fb"
+    },
+    {
+      "path": "reports/tables/manuscript_unknown_label_summary.csv",
+      "exists": true,
+      "size_bytes": 504,
+      "sha256": "8fe9228661fc109f83322e9c64f11fb22cee24bb5df1e87a95304fbd34147258"
+    },
+    {
+      "path": "reports/tables/manuscript_unknown_label_balance.csv",
+      "exists": true,
+      "size_bytes": 8480,
+      "sha256": "bf3e04d49349917308a8147499971841d39edf578fa2ebce412330773a2e5945"
+    },
+    {
+      "path": "reports/final/MANUSCRIPT_SUPPORT_ANALYSES.md",
+      "exists": true,
+      "size_bytes": 3585,
+      "sha256": "6a072473bfee3a1fdf1ee339d23b48fc0dc15dd9390889b034fd841390d0ccca"
+    },
+    {
+      "path": "reports/final/COVID_RARS_PHASED_RESULTS_BRIEF_2026-06-15.md",
+      "exists": true,
+      "size_bytes": 13528,
+      "sha256": "a41803067884a5cfa2a07f7d50be79428a150fce23adf564a9ef3fe44c992082"
+    },
+    {
+      "path": "data/outputs/metrics/temporal_holdout_metrics.csv",
+      "exists": true,
+      "size_bytes": 16488,
+      "sha256": "4d652899198cca1845545fada4dd90c8960fff94c12ad8fd8f4eb220da6286ee"
+    },
+    {
+      "path": "data/outputs/metrics/temporal_holdout_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "reports/tables/temporal_holdout_split_summary.csv",
+      "exists": true,
+      "size_bytes": 977,
+      "sha256": "47ade18814c74db40ac2ae4ef67876ac6c0dabcc0105b04fbe8276d5dac89811"
+    },
+    {
+      "path": "reports/tables/temporal_holdout_modality_coverage.csv",
+      "exists": true,
+      "size_bytes": 1714,
+      "sha256": "00b030cee22b4c09c1f811dc448d1546307fa88ca4e30809efb5411338dfe6ca"
+    },
+    {
+      "path": "reports/tables/temporal_holdout_metadata_feature_importance.csv",
+      "exists": true,
+      "size_bytes": 48402,
+      "sha256": "b59bf1eec1eed383e426d4530d8489598e5ea4a0c9b2b4fd8a34d0d546daf8f4"
+    },
+    {
+      "path": "reports/tables/temporal_holdout_metadata_group_summary.csv",
+      "exists": true,
+      "size_bytes": 4398,
+      "sha256": "5da4f78bceb5a79cea679176711e6eb422405ec239bbf3c2e161a4b2880793d4"
+    },
+    {
+      "path": "reports/tables/temporal_metadata_ablation.csv",
+      "exists": true,
+      "size_bytes": 15964,
+      "sha256": "5156cb22ca61cba1147a57527e44b7cfa671adce50248211261cd18119e1c075"
+    },
+    {
+      "path": "reports/tables/temporal_stability_summary.csv",
+      "exists": true,
+      "size_bytes": 12352,
+      "sha256": "9860d707ae5b4a95b85bf566d1a3b5cfcccdfcf34a7626ad33767ee60a0be2ea"
+    },
+    {
+      "path": "data/outputs/metrics/temporal_holdout_bootstrap_ci.csv",
+      "exists": true,
+      "size_bytes": 43895,
+      "sha256": "ac1e3b46641252e7fcd2a1753b7f77288aa39b0d47f40c9c666b95cb7c2d9a09"
+    },
+    {
+      "path": "reports/tables/temporal_external_unification.csv",
+      "exists": true,
+      "size_bytes": 1261,
+      "sha256": "8d343c8d6328044f326471fdbadd9b2df87e12ee0970f6c93e239539107c07ca"
+    },
+    {
+      "path": "reports/tables/temporal_stress_test_summary.csv",
+      "exists": true,
+      "size_bytes": 1436,
+      "sha256": "e77e9e7dd6c30047ae8a4087889a7d61e9563c6d5e2d3b34187b8ef67f4db269"
+    },
+    {
+      "path": "reports/tables/temporal_metadata_feature_attribution_comparison.csv",
+      "exists": true,
+      "size_bytes": 27309,
+      "sha256": "3330394a73d395bf26b334d6a42c7d175915439f5a6205d2ffde9a42c152750c"
+    },
+    {
+      "path": "reports/tables/temporal_stress_test_significance.csv",
+      "exists": true,
+      "size_bytes": 347,
+      "sha256": "ea45ac70569438ef79f62d752ea940607aed903ca2f410647d5f43258d30495b"
+    },
+    {
+      "path": "reports/final/TEMPORAL_ROBUSTNESS_CAUSAL_CHAIN.md",
+      "exists": true,
+      "size_bytes": 984,
+      "sha256": "2f05359ace11de632237df0db904d419823bbe027637bc99689502caa1a7cdff"
+    },
+    {
+      "path": "reports/tables/temporal_month_year_ablation_paper_table.csv",
+      "exists": true,
+      "size_bytes": 870,
+      "sha256": "9fe5049a826915f9c0c7ff34026dc79e8d28a08d5e28823808d17d46c449ef58"
+    },
+    {
+      "path": "reports/figures/temporal_stress_test_figure.svg",
+      "exists": true,
+      "size_bytes": 2174,
+      "sha256": "031c05b0e8b158f7ac9a93251cb1dae270b5a57bf281614774eb48b89ddd995a"
+    },
+    {
+      "path": "reports/final/TEMPORAL_RESULTS_SECTION_DRAFT.md",
+      "exists": true,
+      "size_bytes": 2435,
+      "sha256": "11a109e05de4a15d17b2113f2822d9c735179f5ad11cd40961e20d305d1591ed"
+    },
+    {
+      "path": "reports/tables/temporal_month_label_shift.csv",
+      "exists": true,
+      "size_bytes": 2756,
+      "sha256": "048bed19e667d946b7145a6f33deb785c436df6cbaedf89591ed38bb6033155b"
+    },
+    {
+      "path": "reports/tables/temporal_month_covariate_shift.csv",
+      "exists": true,
+      "size_bytes": 20162,
+      "sha256": "395ae21d4d5ae3770157a646d15195790a21af1bf910eb7ed8937c3189db4fb8"
+    },
+    {
+      "path": "reports/tables/temporal_matched_cohort_metrics.csv",
+      "exists": true,
+      "size_bytes": 1479,
+      "sha256": "849da76dd0e27bcef97da58548e5b7c5785ffca8d6b051041f33082c8d0690d7"
+    },
+    {
+      "path": "reports/tables/temporal_failure_modes_by_shift.csv",
+      "exists": true,
+      "size_bytes": 1497,
+      "sha256": "f738b0bfe9d3ed1a289abe9be1fb171eba1a83d3b7850a40c6b3adcaf725cb98"
+    },
+    {
+      "path": "reports/tables/temporal_uncertainty_under_shift.csv",
+      "exists": true,
+      "size_bytes": 485,
+      "sha256": "b3b7a54e1f829154d4e15d7c31716a6b2ce53a54ab8e68d52e037955654668ca"
+    },
+    {
+      "path": "reports/tables/temporal_month_ablation_effect_sizes.csv",
+      "exists": true,
+      "size_bytes": 541,
+      "sha256": "1dd3b18cc26f98b8b930b2b5c0fafb639e4bc927897fd1a40b51838da4fd94f3"
+    },
+    {
+      "path": "reports/final/TEMPORAL_MONTH_CAUSAL_DAG.md",
+      "exists": true,
+      "size_bytes": 941,
+      "sha256": "74b795da828676562c7d5ee42de5705ef016b0d5ffaaea193290695490ad9548"
+    },
+    {
+      "path": "reports/final/TEMPORAL_SHORTCUT_THEORY.md",
+      "exists": true,
+      "size_bytes": 639,
+      "sha256": "93bd02654403b7ec1208dd21d96abb30f19ad94bf196e870fcc872e922c182e6"
+    },
+    {
+      "path": "data/outputs/metrics/strong_baseline_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/strong_baseline_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "reports/tables/strong_baseline_model_selection.csv",
+      "exists": true,
+      "size_bytes": 553,
+      "sha256": "c0bfe7e7e272b2c3a3b9235c7bbbae2747e944b919c6a560ee3e50482bb8fe65"
+    },
+    {
+      "path": "reports/tables/strong_baseline_protocol_audit.csv",
+      "exists": true,
+      "size_bytes": 2718,
+      "sha256": "b844a02a77111aa8576fe2b641ac337f0b3aacc0a845baa469df5c1578eaa522"
+    },
+    {
+      "path": "reports/tables/strong_baseline_participant_audit.csv",
+      "exists": true,
+      "size_bytes": 1308,
+      "sha256": "53b58985e9fea9bbd3800c9b192dc4861b3ced6977016f3272c9d817051aa30a"
+    },
+    {
+      "path": "data/processed/sota_segment_index.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "reports/tables/sota_segment_index_audit.csv",
+      "exists": true,
+      "size_bytes": 62,
+      "sha256": "e42e78d7a2120e3a2f3eac667fdf6ec1d018f46c63e5df8517d65c400f432c00"
+    },
+    {
+      "path": "data/outputs/metrics/sota_fusion_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/sota_fusion_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/sota_swarm_feature_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/sota_swarm_feature_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "reports/tables/sota_swarm_feature_selection.csv",
+      "exists": true,
+      "size_bytes": 3920,
+      "sha256": "f4df13bb099a68630f3baaf2b73372b4ca1bda91ea5a187f0077b000d213096c"
+    },
+    {
+      "path": "data/outputs/metrics/sota_gated_stack_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/sota_gated_stack_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "reports/tables/sota_gated_stack_candidates.csv",
+      "exists": true,
+      "size_bytes": 59712,
+      "sha256": "23bb8cb41acda9ed568037cf53e61b33140cda8a083eea1b363e975420521686"
+    },
+    {
+      "path": "data/outputs/metrics/compare_is10_final_validation_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/compare_is10_final_validation_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/compare_is10_external_transfer_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/compare_is10_external_transfer_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/compare_is10_shuffle_retrain_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "reports/tables/compare_is10_shuffle_retrain_summary.csv",
+      "exists": true,
+      "size_bytes": 1718,
+      "sha256": "3b4c0273f06fedb356d6c06933a43aeebef4f0c40a3fa395938eab391ac53afc"
+    },
+    {
+      "path": "data/outputs/metrics/compare_is10_reverse_temporal_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/compare_is10_reverse_temporal_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "reports/tables/compare_is10_reverse_temporal_summary.csv",
+      "exists": true,
+      "size_bytes": 606,
+      "sha256": "417c9f60e7da0d5478af4e30037a02f0d90e3d6dab592a5922d731681f9c5a5f"
+    },
+    {
+      "path": "reports/tables/compare_is10_reverse_temporal_split_summary.csv",
+      "exists": true,
+      "size_bytes": 411,
+      "sha256": "43b4128fdd3ef787cd0d0d363988d58940d3ddff019105aeeca961c1c7312a3d"
+    },
+    {
+      "path": "reports/tables/compare_is10_reverse_temporal_modality_coverage.csv",
+      "exists": true,
+      "size_bytes": 687,
+      "sha256": "c05d0b84efeac53b7515846554dba70d76ab8c731b21aefcdf624fb1efdf78ec"
+    },
+    {
+      "path": "data/outputs/metrics/compare_is10_multiseed_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "reports/tables/compare_is10_multiseed_final_summary.csv",
+      "exists": true,
+      "size_bytes": 7009,
+      "sha256": "43cd1f45fad60e15db441d37fb1f5372d47032923c095a3c1b225c1b22684b3b"
+    },
+    {
+      "path": "reports/tables/compare_is10_multiseed_stability_summary.csv",
+      "exists": true,
+      "size_bytes": 4491,
+      "sha256": "ef87b896e6c75788698f7e1f59c44804a13e59ddbb787c87e467c2bbbe70cc83"
+    },
+    {
+      "path": "data/outputs/metrics/deep_external_wavlm_cough_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/deep_external_wavlm_cough_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/deep_external_wavlm_cough_history.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/deep_external_cnn_bigru_cough_metrics.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/deep_external_cnn_bigru_cough_validation_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/deep_external_cnn_bigru_cough_test_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/deep_external_cnn_bigru_cough_external_predictions.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "data/outputs/metrics/deep_external_cnn_bigru_cough_history.csv",
+      "exists": false,
+      "size_bytes": 0,
+      "sha256": ""
+    },
+    {
+      "path": "reports/tables/compare_is10_final_validation_summary.csv",
+      "exists": true,
+      "size_bytes": 1687,
+      "sha256": "61c6a7fdce1c0b0e3f27ad95889df6d34e5aafd44b7bb370d0eb417edc4a5d9b"
+    },
+    {
+      "path": "reports/tables/compare_is10_final_validation_split_summary.csv",
+      "exists": true,
+      "size_bytes": 1094,
+      "sha256": "977707cb354a730aacbc658007c41a5113536beff104244bf16d01711844b811"
+    },
+    {
+      "path": "reports/tables/compare_is10_final_validation_modality_coverage.csv",
+      "exists": true,
+      "size_bytes": 2065,
+      "sha256": "825870713467856c10fbae384cf54d2af725a881068049043dcba0617e58f786"
+    },
+    {
+      "path": "reports/figures/compare_is10_temporal_degradation.svg",
+      "exists": true,
+      "size_bytes": 1558,
+      "sha256": "cec4069c2a0d6337792cc1f83441b0966d9673da1782db87cd3151827e1cc06e"
+    },
+    {
+      "path": "reports/figures/compare_is10_final_validation_summary.svg",
+      "exists": true,
+      "size_bytes": 1895,
+      "sha256": "2931531deb54344e83eeea93499a921f0f41ccef6ddb07b5c6d96e4fe100661e"
+    },
+    {
+      "path": "reports/tables/feature_shift_report.csv",
+      "exists": true,
+      "size_bytes": 42276,
+      "sha256": "e64a1daae950058241c471c2e15936c5d7cdb0ef62ae601af1eb96f555dfa216"
+    },
+    {
+      "path": "reports/tables/feature_shift_summary.csv",
+      "exists": true,
+      "size_bytes": 115,
+      "sha256": "7870e9b18d659610f41d34935a4ed8d8957d21e22d81e89c201e87e101fe0c70"
+    },
+    {
+      "path": "reports/tables/paper_metric_table.csv",
+      "exists": true,
+      "size_bytes": 890025,
+      "sha256": "f26a9a7094fcdd08a9cb310844a12b63f46a525a567a35ea26f23e2d61b82395"
+    },
+    {
+      "path": "reports/tables/feature_shift_beats_cough.csv",
+      "exists": true,
+      "size_bytes": 135611,
+      "sha256": "a18f74aeba8a449e5a3d14877d776173becfbf49f4128cfd8994ab781115d60f"
+    },
+    {
+      "path": "reports/tables/feature_shift_opensmile_egemaps_cough.csv",
+      "exists": true,
+      "size_bytes": 17952,
+      "sha256": "cd8ba3fef11d988efe329658568d85b9df3fee4da360fb53921e65ea58270121"
+    },
+    {
+      "path": "reports/tables/feature_shift_panns_cough.csv",
+      "exists": true,
+      "size_bytes": 305398,
+      "sha256": "30c7b6112c1beede7cfc649a92bdbcbe93b2f8f63287fc9d3f8fa8eae6035dcf"
+    },
+    {
+      "path": "reports/tables/feature_shift_beats_summary.csv",
+      "exists": true,
+      "size_bytes": 115,
+      "sha256": "a534487db49c944fa044f4179e3d34d205d8b5c764540378f6365b589d40a9e9"
+    },
+    {
+      "path": "reports/tables/feature_shift_opensmile_egemaps_summary.csv",
+      "exists": true,
+      "size_bytes": 113,
+      "sha256": "ca066a7b457171f9e3c1bd19b7e29c26b813ae5c110d574fcb8f1148b84ff9fe"
+    },
+    {
+      "path": "reports/tables/feature_shift_panns_summary.csv",
+      "exists": true,
+      "size_bytes": 116,
+      "sha256": "193c6d5b951a0e06192458101aa1a891fc24474bdf2396eeb992d10ee9dfdf19"
+    }
+  ]
+}

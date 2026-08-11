@@ -16,7 +16,7 @@ This repository is in research/manuscript mode. Changes should preserve traceabi
 Recommended checks:
 
 ```powershell
-cd covid_audio_btp
+cd path\to\Covid-RARS
 python -m compileall -q src scripts tests
 python -m pytest
 ```
@@ -27,9 +27,9 @@ If full dependencies are not installed, document which checks were skipped and w
 
 Strong claims should cite one of:
 
-- `covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_RESULTS_EVIDENCE.md`
-- `covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_E2E_PROJECT_BRIEF.md`
-- `covid_audio_btp/references/verified_source_registry.md`
+- `docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md`
+- `docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md`
+- `references/verified_source_registry.md`
 - Generated CSV/JSON artifacts under result directories or package-level `reports/` and `data/outputs/`.
 
 Avoid adding unsupported language such as "clinical diagnosis", "deployment-ready", or "beats all SOTA".

@@ -21,19 +21,22 @@ Out of scope:
 ## Primary Review Path
 
 1. Read the root [`README.md`](README.md).
-2. Read the project brief: [`covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_E2E_PROJECT_BRIEF.md`](covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_E2E_PROJECT_BRIEF.md).
-3. Read the evidence ledger: [`covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_RESULTS_EVIDENCE.md`](covid_audio_btp/docs/research_briefing/COVID_AUDIO_BTP_RESULTS_EVIDENCE.md).
-4. Check source/claim guardrails: [`covid_audio_btp/references/verified_source_registry.md`](covid_audio_btp/references/verified_source_registry.md).
+2. Read the project brief: [`docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md`](docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md).
+3. Read the evidence ledger: [`docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md`](docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md).
+4. Check source/claim guardrails: [`references/verified_source_registry.md`](references/verified_source_registry.md).
 5. Use [`docs/repository/REPOSITORY_MAP.md`](docs/repository/REPOSITORY_MAP.md) to locate code and artifacts.
 
 ## Reproducibility Notes
 
-The package metadata is in [`covid_audio_btp/pyproject.toml`](covid_audio_btp/pyproject.toml). Core dependencies are in [`covid_audio_btp/requirements.txt`](covid_audio_btp/requirements.txt), with optional GPU, development, and extended dependencies separated into package-level requirement files.
+The package metadata is in [`pyproject.toml`](pyproject.toml). Core dependencies are in [`requirements.txt`](requirements.txt), with optional GPU, HST, development, and extended dependencies separated into root requirement files.
 
 Basic install:
 
 ```powershell
-cd covid_audio_btp
+cd Covid-RARS
+git lfs install
+git lfs pull
+git submodule update --init --recursive HST
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
@@ -41,13 +44,19 @@ python -m pip install -r requirements.txt
 python -m pip install -e .
 ```
 
-Tests:
+Core tests:
 
 ```powershell
-cd covid_audio_btp
+cd Covid-RARS
 python -m pip install -r requirements-dev.txt
 python -m pytest
 ```
+
+The core test command skips executable HST tests when Torch or the pinned
+official HST checkpoints are unavailable. Full HST verification is a separate
+Ubuntu/GPU profile. Follow [`docs/HST_UBUNTU_RUNBOOK.md`](docs/HST_UBUNTU_RUNBOOK.md)
+to install `requirements-hst.txt`, prepare and verify the official checkpoints,
+and run `tests/test_hst_*.py`.
 
 Some full experiments require raw Coswara and/or COUGHVID data and optional dependencies. Raw data access must follow dataset-source terms.
 
@@ -55,7 +64,7 @@ Some full experiments require raw Coswara and/or COUGHVID data and optional depe
 
 | Area | Location |
 |---|---|
-| Active code and tests | `covid_audio_btp/` |
+| Active code and tests | `src/`, `scripts/`, `tests/` |
 | Final/frozen result folders | `results/frozen/` |
 | Representation result folders | `results/representations/` |
 | Compressed bundles | `artifacts/bundles/` |
