@@ -25,7 +25,7 @@ The exact protocol-matched values 0.8489 and 0.8641 are preserved in the dated r
 | Closest internal multimodal context: FAIR | 0.8658 | 0.8489 clean repeated CV | -0.0169 | Slightly lower under the cleaner fold-local selection analysis. |
 | Closest internal multimodal context: FAIR | 0.8658 | 0.8641 fixed-feature sensitivity | -0.0017 | Numerically almost identical, but the fixed feature bank makes this a sensitivity result rather than the primary clean estimate. |
 | Chetupalli audio-only fusion | 0.880 | 0.8489 clean repeated CV | -0.0311 | Lower, although dataset snapshot and modeling differ. |
-| Chetupalli audio-only fusion | 0.880 | 0.897 selected participant split | +0.017 | Higher on one selected source split, which is not sufficient for a superiority claim. |
+| Chetupalli audio-only fusion | 0.880 | 0.895 validation-selected equal-weight fusion | +0.015 | Numerically close on one source split, which is not sufficient for a superiority claim. |
 | Closest directional frozen transfer: Islam et al. | 0.530 | 0.523-0.543 | -0.007 to +0.013 | Essentially the same external magnitude under the closest published transfer direction. |
 | HST internal COUGHVID | 0.90 +/- 0.01 | 0.523-0.543 external | Not computable as a fair gap | HST learned from COUGHVID. Our models did not. This is target learnability versus source-to-target portability. |
 | Cough2COVID-19 multi-source transfer | 0.981 | 0.523-0.543 | Not computable as a fair gap | Three source datasets and target-aware feature-family analysis make this an important counterexample, not the same estimand. |
@@ -36,7 +36,7 @@ The numerical verdict is mixed. The final pipeline is competitive with close int
 
 | Evidence rung | AUROC | What it establishes |
 |---|---:|---|
-| Selected participant-disjoint Coswara cough-speech fusion | 0.897 | Strong source discrimination for one frozen selected split. |
+| Validation-selected participant-disjoint Coswara cough-speech fusion | 0.895 | Strong source discrimination for the prespecified equal-weight rule. The exploratory stack reached 0.897. |
 | Repeated participant-disjoint CV with fold-local feature selection | 0.849 +/- 0.020 | Cleaner paper-style internal estimate with selection repeated inside each fold. |
 | Repeated CV with the fixed final top-800 feature bank | 0.864 +/- 0.020 | Sensitivity analysis for the frozen selected representation, not the cleanest nested estimate. |
 | Conventional cough source tests | 0.849-0.868 | Matched source denominators for the four controlled transfer models. |
@@ -53,9 +53,9 @@ The numerical verdict is mixed. The final pipeline is competitive with close int
 
 | Paper | Published result | Present result that may be discussed beside it | Boundary |
 |---|---:|---:|---|
-| Chetupalli et al., *Multi-Modal Point-of-Care Diagnostics for COVID-19 Based on Acoustics and Symptoms* | Audio-only fusion 0.88. Audio plus symptoms 0.963. | 0.897 selected split, 0.849 clean repeated CV, 0.864 fixed-feature sensitivity. | The audio-only value is close context. The 0.963 value adds symptoms and is not an audio-only comparison. |
+| Chetupalli et al., *Multi-Modal Point-of-Care Diagnostics for COVID-19 Based on Acoustics and Symptoms* | Audio-only fusion 0.88. Audio plus symptoms 0.963. | 0.895 primary source split, 0.849 clean repeated CV, 0.864 fixed-feature sensitivity. | The audio-only value is close context. The 0.963 value adds symptoms and is not an audio-only comparison. |
 | Truong et al., *Fused Audio Instance and Representation for Respiratory Disease Detection* | 0.8658 +/- 0.0115 for cough, breath, and speech on a fixed 226-person internal test set. | 0.849 +/- 0.020 clean repeated CV and 0.864 +/- 0.020 fixed-feature sensitivity. | This is the closest multimodal internal numerical comparison, but the cohort snapshot, seven inputs, learned representations, and fixed-test design differ. |
-| Bhattacharya et al., *Coswara* | 0.915 for its published multimodal workflow. | 0.897 selected split. | Same resource family but a different snapshot, task bank, model, and symptom handling. Context only for magnitude. |
+| Bhattacharya et al., *Coswara* | 0.915 for its published multimodal workflow. | 0.895 primary source split. | Same resource family but a different snapshot, task bank, model, and symptom handling. Context only for magnitude. |
 | Aytekin et al., *Hierarchical Spectrogram Transformers* | COUGHVID AUROC 0.90 +/- 0.01. | COUGHVID external AUROC 0.523-0.543. | Not a direct comparison. HST was trained and validated inside a balanced COUGHVID task, while our models were frozen after Coswara-only development. |
 
 The defensible conclusion is that the current source pipeline is reasonably strong and numerically near relevant Coswara multimodal systems. It is not justified to claim universal state of the art.
@@ -105,7 +105,7 @@ The novelty is the coordinated reliability design, not ownership of every indivi
 
 The criticism cannot be dismissed completely. The system is not state of the art under every internal protocol. The strongest response is:
 
-> The clean internal multimodal result is 0.849 AUROC and the fixed-feature sensitivity result is 0.864, close to FAIR's 0.866 and Chetupalli's 0.88 audio-only fusion. The selected source split reaches 0.897. More importantly, the frozen Coswara-to-COUGHVID result is not unique to one classifier. Four conventional models, WavLM, and CNN-BiGRU all degrade, and Islam et al. independently report 0.53 for the same transfer direction. This supports a dataset-transport problem in the evaluated setting, although it does not prove that every possible architecture must fail.
+> The clean internal multimodal result is 0.849 AUROC and the fixed-feature sensitivity result is 0.864, close to FAIR's 0.866 and Chetupalli's 0.88 audio-only fusion. The validation-selected equal-weight source split reaches 0.895, while an exploratory stack reaches 0.897. More importantly, the frozen Coswara-to-COUGHVID result is not unique to one classifier. Four conventional models, WavLM, and CNN-BiGRU all degrade, and Islam et al. independently report 0.53 for the same transfer direction. This supports a dataset-transport problem in the evaluated setting, although it does not prove that every possible architecture must fail.
 
 ### "HST reaches 0.90 on COUGHVID, so why are your values near 0.53?"
 

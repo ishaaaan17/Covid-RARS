@@ -36,7 +36,7 @@ source = [
 sourceText = {
     sprintf('Coswara source\n2,114 participants\ncough | breath | speech')
     sprintf('16 kHz mono\nquality control\nevent extraction')
-    sprintf('Acoustic summaries\nComParE 2016 | IS10\n10,147 columns')
+    sprintf('Acoustic summaries\nComParE 2016 | IS10\n10,140 numeric candidates')
     sprintf('Source-only ranking\ntop 800 frozen\nper modality')
     sprintf('Four classifiers\nparticipant aggregation\nvalidation-derived fusion')
 };
@@ -360,13 +360,13 @@ hShuffle = errorbar(axA, shuffle.shuffled_auroc_mean, y, neg, pos, 'horizontal',
     'CapSize', 5, 'LineWidth', 0.9);
 hObserved = scatter(axA, shuffle.observed_auroc, y, 32, c.blue, 'o', 'filled');
 for i = 1:3
-    text(axA, shuffle.observed_auroc(i) + 0.008, y(i), sprintf('%.3f', shuffle.observed_auroc(i)), ...
+    text(axA, shuffle.observed_auroc(i) + 0.018, y(i), sprintf('%.3f', shuffle.observed_auroc(i)), ...
         'Color', c.blue, 'FontSize', 6.8, 'VerticalAlignment', 'middle');
 end
 uistack(hChance, 'bottom');
 formatMetricAxis(axA);
 set(axA, 'YTick', y, 'YTickLabel', cellstr(auditLabels), 'YDir', 'reverse');
-xlim(axA, [0.44 1.015]);
+xlim(axA, [0.44 1.04]);
 ylim(axA, [0.5 3.5]);
 xlabel(axA, 'AUROC');
 panelTitle(axA, 'a', 'Metadata control');

@@ -46,7 +46,7 @@ Our audio features are measured summaries of sound, not magic. They describe dur
 
 ## 2. From So Many Features, What Did We Choose And Why?
 
-After combining our own measured audio summaries with OpenSMILE ComParE 2016 and IS10, we had roughly `10,147` feature columns.
+After combining our measured audio summaries with OpenSMILE ComParE 2016 and IS10, the table had `10,147` columns in total. Seven were identifier or label fields, leaving `10,140` numeric feature candidates.
 
 That is too many for the number of participants. If we train directly on all of them, the model can memorize noise.
 
@@ -154,7 +154,7 @@ COVID data was collected across different pandemic waves. Testing policy, sympto
 
 In our result:
 
-- Existing participant split: `0.897` AUROC.
+- Existing participant split: `0.895` AUROC for the primary equal-weight fusion (`0.897` for the exploratory stack).
 - Time-stratified participant split: `0.849` AUROC.
 
 Meaning:
@@ -231,7 +231,7 @@ If a model only works for one lucky split, reviewers will not trust it. If the d
 
 Our result:
 
-- Internal stacked fusion: about `0.895 +/- 0.003`.
+- Internal equal-weight fusion across five random states: about `0.8945 +/- 0.0068`.
 - Strict early-to-late temporal validation: about `0.691 +/- 0.006`.
 
 Meaning:
@@ -454,7 +454,7 @@ Use this if she asks for the entire logic in simple words:
 ```text
 Ma'am, we first built a strong model using cough, breath, and speech. Instead of feeding only raw audio, we measured many sound properties such as duration, loudness, frequency shape, noisiness, and how these change over time. We selected the best 800 measurements using training data only, then trained several models and fusion methods.
 
-The model was strong inside Coswara, reaching 0.897 AUROC. But when we tested it more strictly, performance dropped: 0.849 with time-aware participant splitting, about 0.698 from early-to-late time validation, and almost random on COUGHVID. We also tested WavLM transformer and CNN-BiGRU, and they did not solve external transfer.
+The primary equal-weight model was strong inside Coswara, reaching 0.895 AUROC; an exploratory stack reached 0.897. But when we tested the broader workflow more strictly, performance dropped: 0.849 with time-aware participant splitting, about 0.698 from early-to-late time validation, and almost random on COUGHVID. We also tested WavLM and CNN-BiGRU, and they did not solve external transfer.
 
 Then we checked why this happens. Metadata alone predicted labels at 0.964 AUROC, so the dataset has strong shortcuts. The important audio features also changed over time, and COUGHVID partly lies outside the Coswara feature space. So the main conclusion is not that we made a deployable COVID detector. The conclusion is that high internal COVID-audio scores are not enough unless temporal drift, metadata shortcuts, calibration, and external validation are tested.
 ```

@@ -181,7 +181,7 @@ same target draw is reused across source folds.
 
 ## Comparator and fusion
 
-- Comparator features: ComParE 2016 plus IS10, 10,147 inputs before selection.
+- Comparator features: project acoustic-summary bank plus ComParE 2016 and IS10, giving 10,140 numeric candidates before selection (from 10,147 total columns after excluding seven identifier and label fields).
 - In every fold and modality, LightGBM ranks training-only features and retains
   800. Four frozen model families are evaluated: LightGBM, SVC-RBF, CatBoost,
   and XGBoost. The selected ensemble is based on validation metrics only.

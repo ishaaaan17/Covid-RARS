@@ -15,7 +15,7 @@ Our model does not beat SOTA and fails on COUGHVID.
 Strong opening:
 
 ```text
-We developed a strong multimodal respiratory-audio pipeline that reaches 0.897 AUROC under internal participant-level validation. We then show that this performance is not sufficient evidence for deployment because temporal validation, metadata-confounding audits, calibration, and COUGHVID transfer reveal major instability.
+We developed a multimodal respiratory-audio pipeline whose validation-selected equal-weight fusion reaches 0.895 AUROC under internal participant-level evaluation. An exploratory logistic stack reaches 0.897. We then show that favorable source performance is not sufficient evidence for deployment because temporal validation, metadata-confounding audits, calibration, and COUGHVID transfer reveal major instability.
 ```
 
 ## Recommended Title Direction
@@ -25,14 +25,14 @@ The title must sound strong, not apologetic.
 Best current title:
 
 ```text
-Beyond Internal Accuracy: Temporal Drift, Shortcut Learning, and External Validation of Multimodal COVID-19 Respiratory-Audio Models
+Temporal and Cross-Dataset Shifts Reveal Reliability Limits in Multimodal COVID-19 Respiratory-Audio Modeling
 ```
 
 Why this works:
 
-- "Beyond Internal Accuracy" signals there is still a strong number.
-- "Temporal Drift, Shortcut Learning, and External Validation" states the novelty.
-- "Multimodal COVID-19 Respiratory-Audio Models" captures cough, breath, and speech.
+- "Temporal and Cross-Dataset Shifts" names the two principal reliability stresses.
+- "Reveal Reliability Limits" states the observed finding without claiming clinical validation or a causal mechanism.
+- "Multimodal COVID-19 Respiratory-Audio Modeling" captures the source workflow while leaving the cough-only external endpoint to the abstract and methods.
 
 Alternative for a medical/digital-health journal:
 
@@ -60,7 +60,7 @@ Use this structure:
 1. **Problem**: COVID respiratory-audio papers report high internal metrics, but deployment validity is uncertain.
 2. **Gap**: Many evaluations do not jointly test temporal drift, metadata shortcuts, calibration, and external transfer.
 3. **Method**: We build a multimodal Coswara pipeline with strong acoustic, OpenSMILE ComParE+IS10, WavLM transformer, CNN-BiGRU, model fusion, and strict validation.
-4. **Results**: Internal `0.897` AUROC; time-stratified `0.849`; temporal `0.698`; COUGHVID external `0.523-0.543`; WavLM `0.484`; CNN-BiGRU `0.548`; metadata-only `0.964`; feature stability `0.074`.
+4. **Results**: Primary internal `0.895` AUROC (`0.897` exploratory stack); time-stratified `0.849`; temporal `0.698`; COUGHVID external `0.523-0.543`; WavLM `0.484`; CNN-BiGRU `0.548`; metadata-only `0.964`; feature stability `0.074`.
 5. **Conclusion**: High internal audio metrics should not be interpreted as deployable screening performance without temporal/external validation.
 
 Do not use code file names in the abstract.
@@ -71,7 +71,7 @@ Use these contribution bullets:
 
 1. We construct a multimodal COVID respiratory-audio benchmark pipeline combining strong acoustic descriptors, OpenSMILE ComParE 2016, IS10, model selection, and multimodal probability fusion.
 2. We evaluate the pipeline across a validation ladder: existing participant split, time-stratified participant split, early-to-late temporal split, and COUGHVID external cough transfer.
-3. We show that strong internal performance (`0.897` AUROC) degrades under temporal and external validation, with COUGHVID cough transfer collapsing near chance across measured audio-summary, CNN-BiGRU, and WavLM transformer branches.
+3. We show that strong internal performance (primary `0.895` AUROC; exploratory stack `0.897`) degrades under temporal and external validation, with COUGHVID cough transfer collapsing near chance across measured audio-summary, CNN-BiGRU, and WavLM transformer branches.
 4. We quantify shortcut-learning mechanisms using metadata-only models, permutation importance, shuffle-label sanity checks, feature-selection stability, support-overlap diagnostics, calibration, and decision-curve analysis.
 5. We test whether audio adds incremental value beyond metadata/symptoms and show that any gain is sample-limited and not yet statistically secure.
 
@@ -278,7 +278,7 @@ Avoid:
 ## Final 30-Second Defense
 
 ```text
-Ma'am, the paper is stronger if we do not chase one inflated leaderboard number. We built a strong internal model at 0.897 AUROC, tested classical, deep, and transformer branches, then showed that temporal drift, metadata shortcuts, feature non-stationarity, and external dataset shift make internal COVID-audio performance unreliable. This is exactly the kind of evidence that reputable biomedical AI venues expect now.
+The validation-selected equal-weight source fusion reaches 0.895 AUROC, with an exploratory stack at 0.897. We tested conventional, deep, and transformer branches, then showed that temporal instability, metadata structure, feature non-stationarity, and external dataset shift limit the interpretation of internal COVID-audio performance.
 ```
 
 

@@ -20,7 +20,7 @@
 \newcommand{\ece}{\mathrm{ECE}}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
-\title{Supplementary Material for ``Multimodal COVID-19 Respiratory Sound Models: Temporal Stability and External Cough Transfer''}
+\title{Supplementary Material for ``Temporal and Cross-Dataset Shifts Reveal Reliability Limits in Multimodal COVID-19 Respiratory-Audio Modeling''}
 \author{Nishant Harkut and Ritu Tiwari}
 
 \begin{document}
@@ -60,7 +60,7 @@ Multimodal fusion & Coswara participant endpoint & Coswara participant endpoint 
 
 \section{Audio Processing and Quality Control}
 
-Files were decoded to mono floating-point waveforms and resampled to 16~kHz. The audit identified 23,539 usable recordings, 597 mostly silent recordings, 390 corrupt recordings, and 186 short recordings. Quality flags were determined before model fitting and describe file usability rather than disease status.
+Files were decoded to mono floating-point waveforms and resampled to 16~kHz. Recordings shorter than 0.50~s for cough or 1.00~s for breath and speech were marked short. A recording was marked mostly silent when more than 70\% of its samples lay outside the active interval returned by 35-dB trimming. It was marked clipped when more than 1\% of samples had absolute amplitude at least 0.999. The audit identified 23,539 usable recordings, 597 mostly silent recordings, 390 corrupt recordings, and 186 short recordings. Quality flags were determined before model fitting and describe file usability rather than disease status.
 
 For the engineered representation, silence trimming used a 35-dB threshold. An energy-based event detector used 25-ms frames and 10-ms hops. Frames above 25\% of the maximum frame energy were retained with a 120-ms margin. The selected event was peak-normalized and center-cropped or zero-padded to 4~s for cough and 5~s for breath and speech. Event start, event end, active duration, and active-audio fraction were retained as acquisition-context descriptors. Their presence is reported explicitly because timing can reflect recording behavior as well as physiology.
 
@@ -76,6 +76,9 @@ Stage & Setting & Purpose and boundary \\
 Decoding & Mono, floating point & Standardized channel layout with unreadable files flagged \\
 Sampling rate & 16~kHz & Common rate for engineered and learned branches \\
 Silence trim & 35~dB & Removes low-energy leading and trailing regions \\
+Quality duration & At least 0.50~s cough; 1.00~s breath or speech & Flags recordings too short for the corresponding task \\
+Silence flag & More than 70\% outside the 35-dB active interval & Marks mostly silent recordings before modeling \\
+Clipping flag & More than 1\% of samples at $|x|\geq0.999$ & Marks recordings with substantial digital clipping \\
 Energy detector & 25-ms frame, 10-ms hop, 25\% peak-energy threshold & Locates the active event using an auditable deterministic rule \\
 Event margin & 120~ms & Retains local context around detected activity \\
 Amplitude & Peak normalization & Reduces gross recording-level scale differences \\
@@ -89,7 +92,7 @@ Timing descriptors & Event boundaries, active duration, active fraction & Includ
 
 \subsection{Engineered Representation}
 
-The merged table contained three families rather than only openSMILE features. The first was a broad acoustic bank computed from the processed waveform using librosa-based extraction \cite{mcfee2015librosa}. The other two were openSMILE ComParE 2016 and IS10 paralinguistic sets \cite{eyben2010opensmile,schuller2010is10,schuller2016compare}. After identifier and context columns, the merged table contained 10,147 columns before global selection.
+The merged table contained three families rather than only openSMILE features. The first was a broad acoustic bank computed from the processed waveform using librosa-based extraction \cite{mcfee2015librosa}. The other two were openSMILE ComParE 2016 and IS10 paralinguistic sets \cite{eyben2010opensmile,schuller2010is10,schuller2016compare}. The merged table contained 10,147 columns in total. Excluding seven identifier and label fields left 10,140 numeric feature candidates before global selection.
 
 \begin{table*}[t]
 \caption{Engineered Feature Families}
@@ -165,9 +168,9 @@ Only after participant aggregation were modalities fused. Uniform fusion used th
 \widetilde w_m=\max\!\left(\auprc_m^{(val)}-0.5,0.01\right),\qquad
 w_m=\frac{\widetilde w_m}{\sum_j\widetilde w_j},
 \end{equation}
-and combined $p_i=\sum_mw_mp_{im}$. Stacked fusion fitted class-balanced logistic regression to validation-set modality probabilities with a maximum of 2,000 iterations. Thus, no final modality weight was hard-coded. Binary thresholds maximized validation balanced accuracy and were then frozen for source test evaluation.
+and combined $p_i=\sum_mw_mp_{im}$. Stacked fusion fitted class-balanced logistic regression to validation-set modality probabilities with a maximum of 2,000 iterations. The primary source rule was the prespecified uniform mean. For cough and speech its weights were therefore fixed at 0.5 and 0.5. Validation-AUPRC weighting and logistic stacking were exploratory alternatives whose parameters were estimated from validation predictions. Binary thresholds maximized validation balanced accuracy and were then frozen for source test evaluation.
 
-The selected participant-split source model used cough and speech in a validation-trained logistic stack. It reached AUROC 0.897 and AUPRC 0.863 on 314 complete-case source-test participants. This is a source multimodal result. The cough-only COUGHVID experiment does not test this fusion.
+Validation selected cough and speech as the source sound set. Their primary equal-weight mean reached AUROC 0.895 and AUPRC 0.862 on 314 complete-case source-test participants. The exploratory logistic stack reached AUROC 0.897 and AUPRC 0.863 but did not replace the primary rule. Both are source multimodal results. The cough-only COUGHVID experiment does not test either fusion.
 
 \section{Evaluation Protocols}
 
@@ -269,7 +272,7 @@ Calibration maps were fitted on the 2,082-recording calibration subset and evalu
 
 \section{Temporal and Repeated-Seed Analyses}
 
-The selected participant-split fusion remained stable across four seeds, with mean AUROC $0.895\pm0.003$. The retrospective early-to-late endpoint had mean AUROC $0.691\pm0.007$ across three seeds. Train, validation, and test prevalence was 0.079, 0.569, and 0.804. These changes make AUPRC and calibration strongly prevalence-dependent and prevent a simple causal attribution to biological temporal drift.
+The equal-weight cough--speech fusion had mean AUROC $0.8945\pm0.0068$ across five random states on the same 314 test participants. The retrospective early-to-late endpoint had mean AUROC $0.691\pm0.007$ across three seeds. Train, validation, and test prevalence was 0.079, 0.569, and 0.804. These changes make AUPRC and calibration strongly prevalence-dependent and prevent a simple causal attribution to biological temporal drift.
 
 The reverse late-to-early experiment yielded AUROC 0.920 but AUPRC 0.029, F1 score 0.011, and ECE 0.471. This illustrates why rank discrimination alone is insufficient under extreme base-rate change. It is secondary and is not evidence of useful reverse deployment.
 
@@ -289,7 +292,7 @@ Source labels were predictable from non-audio fields. The full context model rea
 Model & Feature group & Features & Importance share & Highest-importance field \\
 \midrule
 Full context & Recording protocol & 8 & 0.717 & Recording year \\
-Full context & Symptoms or label proxies & 10 & 0.185 & Reported cough symptom \\
+Full context & Reported symptoms & 10 & 0.185 & Reported cough symptom \\
 Full context & Comorbidity proxies & 8 & 0.052 & Other pre-existing condition \\
 Full context & Demographics & 37 & 0.046 & Country indicator \\
 Demographic/protocol & Recording protocol & 8 & 0.934 & Recording year \\
@@ -318,8 +321,8 @@ The four-model cough-only source-to-target comparison is the primary evidence. D
 
 The reproducibility package should contain participant-level source predictions where aggregation was performed, recording-level CNN and external predictions, metric tables, bootstrap estimates, calibration-bin tables, protocol and leakage audits, feature-selection summaries, model-selection summaries, deterministic figure-generation code, and a machine-readable experiment manifest. Raw audio remains subject to the respective dataset terms. Public release should not redistribute participant-level fields where source licenses prohibit it.
 
+\IEEEtriggeratref{10}
 \bibliographystyle{IEEEtran}
-\IEEEtriggeratref{15}
 \bibliography{references}
 
 \end{document}

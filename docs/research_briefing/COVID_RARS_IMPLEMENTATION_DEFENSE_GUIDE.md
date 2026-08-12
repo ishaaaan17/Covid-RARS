@@ -124,7 +124,7 @@ Used because:
 
 ### Merged feature table
 
-The merged ComParE+IS10 table contains roughly `10,147` columns.
+The merged engineered table contains `10,147` columns in total. Seven identifier and label fields are excluded, leaving `10,140` numeric feature candidates for ranking.
 
 Why feature selection is mandatory:
 
@@ -240,7 +240,8 @@ Purpose:
 
 Main result:
 
-- `0.897` AUROC, `0.863` AUPRC.
+- Primary equal-weight fusion: `0.895` AUROC, `0.862` AUPRC.
+- Exploratory logistic stack: `0.897` AUROC, `0.863` AUPRC.
 
 ### Time-stratified participant split
 

@@ -8,7 +8,7 @@ The safest project sentence is:
 
 > We built a multimodal COVID respiratory-audio benchmark pipeline with strong internal performance, then showed through temporal validation, metadata-confounding audits, calibration, and COUGHVID transfer that high internal respiratory-audio scores are not reliable evidence of deployable screening performance.
 
-This is not a pure leaderboard/SOTA paper. The internal result is strong (`0.897` AUROC), but the scientific contribution is the evidence chain showing why that number is not enough.
+This is not a pure leaderboard/SOTA paper. The primary equal-weight internal result is strong (`0.895` AUROC), and an exploratory logistic stack reaches `0.897`; the scientific contribution is the evidence chain showing why favorable source scores are not enough.
 
 ## One-Minute Thesis
 
@@ -16,7 +16,7 @@ Public COVID-audio studies often report high internal metrics, but the real ques
 
 The final story is:
 
-- Internal participant-split fusion reaches `0.897` AUROC and `0.863` AUPRC.
+- The primary equal-weight participant-split fusion reaches `0.895` AUROC and `0.862` AUPRC; an exploratory logistic stack reaches `0.897` and `0.863`.
 - Time-stratified participant validation remains high but lower at `0.849` AUROC.
 - Early-to-late temporal validation drops to about `0.698` AUROC, with multi-seed temporal mean around `0.691 +/- 0.006`.
 - COUGHVID external transfer collapses to near-random performance: measured audio-summary cough models `0.523-0.543` AUROC, WavLM transformer `0.484` AUROC, CNN-BiGRU `0.548` AUROC.
@@ -106,7 +106,7 @@ We used three measured audio-summary/acoustic feature groups:
 | OpenSMILE ComParE 2016 | Large paralinguistic acoustic descriptor set | Common in speech/cough challenge-style audio papers; adds established high-dimensional descriptors |
 | OpenSMILE IS10 | INTERSPEECH 2010 paralinguistic descriptor set | Smaller established descriptor set; complementary to ComParE |
 
-The ComParE+IS10 merged table has about `10,147` columns before selection. Because this is much larger than the number of participants, we did not feed all features directly into final models. We selected the top `800` features using train-only LightGBM feature importance.
+The merged engineered table has `10,147` columns in total. After seven identifier and label fields are excluded, `10,140` numeric feature candidates remain. Because this is much larger than the number of participants, we did not feed all candidates directly into final models. We selected the top `800` using train-only LightGBM feature importance.
 
 ### 4. Feature selection
 
@@ -182,7 +182,7 @@ The final paper should emphasize a validation ladder:
 
 | Tier | What it tests | Main result |
 |---|---|---:|
-| Existing participant split | Strong internal performance under the repository split | `0.897` AUROC |
+| Existing participant split | Primary equal-weight multimodal source result | `0.895` AUROC |
 | Time-stratified participant split | Participant separation with time structure considered | `0.849` AUROC |
 | Early-to-late temporal split | Whether the model survives calendar drift | `0.698` AUROC |
 | COUGHVID external cough transfer | Whether cough representations survive another dataset | `0.523-0.543` AUROC for measured audio-summary, `0.484` WavLM, `0.548` CNN-BiGRU |
@@ -195,7 +195,7 @@ The key interpretation:
 
 | Result block | Number | Meaning |
 |---|---:|---|
-| Existing participant split | `0.897` AUROC, `0.863` AUPRC | Strong internal multimodal performance |
+| Existing participant split | `0.895` AUROC, `0.862` AUPRC | Primary equal-weight multimodal performance; exploratory stack `0.897` / `0.863` |
 | Time-stratified split | `0.849` AUROC, `0.783` AUPRC | Still strong, but lower |
 | Early-to-late temporal split | `0.698` AUROC | Temporal drift damages performance |
 | COUGHVID external measured audio-summary cough | `0.523-0.543` AUROC | Near-random external transfer |
@@ -212,7 +212,7 @@ The key interpretation:
 Use this if she asks, "What is the achievement if not SOTA?"
 
 ```text
-Ma'am, the strongest internal model reaches 0.897 AUROC, so the pipeline is not weak internally. The main contribution is that we then tested whether this performance survives realistic conditions. Under temporal and external validation, the performance drops sharply, and the same collapse appears for measured audio-summary models, WavLM transformer, and CNN-BiGRU. This is stronger than simply reporting one high number because it tells reviewers what is actually deployable and what is only an internal benchmark artifact.
+The validation-selected equal-weight internal model reaches 0.895 AUROC, and an exploratory logistic stack reaches 0.897. The main contribution is that we then tested whether this source performance survives realistic conditions. Under temporal and external validation, performance drops sharply, and the same external pattern appears for measured audio-summary models, WavLM, and CNN-BiGRU. This distinguishes internal benchmark performance from evidence of portability.
 ```
 
 If she asks, "Why should a good journal accept this?"

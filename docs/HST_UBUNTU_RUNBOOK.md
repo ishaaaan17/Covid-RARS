@@ -128,7 +128,7 @@ Review that the proposal binds:
 
 - the authenticated `manifests` stage receipt;
 - the exact `aligned_comparator` manifest;
-- the complete 10,147-column ComParE+IS10 table, not a preselected table;
+- the complete merged acoustic-summary, ComParE 2016, and IS10 table (10,147 columns total, including seven identifier and label fields), leaving 10,140 numeric candidates before selection;
 - top-800 feature selection fitted inside each training fold;
 - LightGBM ranking and the frozen LightGBM, SVC, CatBoost, and XGBoost bank;
 - validation-only candidate selection, source code, dependency lock, Git

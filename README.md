@@ -13,11 +13,11 @@ The internal Coswara result is strong, but deployment-style checks expose large 
 
 ## Main Result
 
-The best internal multimodal Coswara setting reaches `0.897` AUROC and `0.863` AUPRC. Under stricter checks, performance drops:
+The validation-selected equal-weight multimodal Coswara setting reaches `0.895` AUROC and `0.862` AUPRC. An exploratory logistic stack reaches `0.897` AUROC and `0.863` AUPRC. Under stricter checks, performance drops:
 
 | Test | Result | Interpretation |
 |---|---:|---|
-| Existing participant split | `0.897` AUROC, `0.863` AUPRC | Strong internal multimodal performance |
+| Existing participant split | `0.895` AUROC, `0.862` AUPRC | Validation-selected equal-weight cough--speech fusion |
 | Time-stratified participant split | `0.849` AUROC, `0.783` AUPRC | Lower under time-aware validation |
 | Early-to-late temporal split | about `0.698` AUROC | Calendar drift damages reliability |
 | COUGHVID external cough transfer, classical acoustic models | `0.523-0.543` AUROC | Weak external discrimination |

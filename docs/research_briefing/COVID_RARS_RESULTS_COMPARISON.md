@@ -12,14 +12,14 @@ Our work should be compared on two axes:
 A reviewer may focus on the highest reported AUROC in other papers. The correct response is not to dismiss those papers. The correct response is:
 
 ```text
-Those numbers are usually reported under internal validation protocols. Our internal number is also high at 0.897 AUROC. The difference is that we additionally tested temporal drift, metadata shortcuts, calibration, decision-curve behavior, and COUGHVID transfer. Under those stricter tests, the model becomes unreliable.
+Those numbers are usually reported under internal validation protocols. Our primary internal number is also high at 0.895 AUROC, with an exploratory stack at 0.897. The difference is that we additionally tested temporal drift, metadata shortcuts, calibration, decision-curve behavior, and COUGHVID transfer. Under those stricter tests, the model becomes unreliable.
 ```
 
 ## Our Main Result Inventory
 
 | Evaluation type | Our result | How to use it |
 |---|---:|---|
-| Existing participant split | `0.897` AUROC | Shows the pipeline is strong internally |
+| Existing participant split | `0.895` AUROC | Primary validation-selected equal-weight fusion; exploratory stack `0.897` |
 | Time-stratified participant split | `0.849` AUROC | More conservative internal evidence |
 | Paper-comparable cough 10-fold CV | `0.819` AUROC | Fairer comparison to cough-only CV papers |
 | Temporal early-to-late | `0.698` AUROC | Main drift evidence |
@@ -37,7 +37,7 @@ Use this when the other paper reports internal train/test, cross-validation, or 
 
 Our comparable rows:
 
-- Existing participant split: `0.897` AUROC.
+- Existing participant split: `0.895` AUROC for the primary equal-weight fusion (`0.897` for the exploratory stack).
 - Time-stratified split: `0.849` AUROC.
 - Paper-comparable cough 10-fold CV: `0.819` AUROC.
 
@@ -148,7 +148,7 @@ Use this table in meetings.
 
 | Question | Best response |
 |---|---|
-| "This paper has 0.92 AUC. Why are you lower?" | "That is an internal or different-protocol number. Our internal result is also high at 0.897. Our stricter temporal/external rows intentionally test deployment shift." |
+| "This paper has 0.92 AUC. Why are you lower?" | "That is an internal or different-protocol number. Our primary internal result is 0.895, with an exploratory stack at 0.897. Our temporal and external rows test different, stricter transport questions." |
 | "Why not just do their model?" | "We tested multiple model families including boosted trees, SVC, CNN-BiGRU, and WavLM transformer. The failure persists across families, so the issue is structural validation, not one missing classifier." |
 | "Can we claim SOTA?" | "We should not claim universal SOTA. We can claim a strong reliability-audit contribution with strong internal performance and unusually comprehensive validation." |
 | "Will reviewers reject low external numbers?" | "Not if framed correctly. Biomedical AI reviewers value external validation and will see honest external failure as evidence against unsafe deployment claims." |
@@ -161,7 +161,7 @@ Use this table in meetings.
 Use when comparing to papers with internal Coswara/cough CV:
 
 - Our cough-only paper-comparable CV: `0.819` AUROC.
-- Our internal participant split multimodal: `0.897` AUROC.
+- Our primary internal participant-split multimodal result: `0.895` AUROC (`0.897` exploratory stack).
 - Our time-stratified multimodal: `0.849` AUROC.
 
 Interpretation:

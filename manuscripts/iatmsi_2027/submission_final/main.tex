@@ -79,8 +79,8 @@ representations across several recordings \cite{truong2024fair}. More inputs do
 not guarantee a better model. An added task also increases missingness,
 dimensionality, and opportunities for model selection. Its value must be judged
 on participants not used to fit the sound branches. A fused score alone cannot
-show whether the combination improves on cough, the strongest single sound,
-both, or neither.
+show whether the combination improves on cough, on the strongest single-sound
+branch, on both, or on neither.
 
 Evaluation design is equally important. Participant allocation and cohort
 composition can alter respiratory-audio estimates \cite{han2022realistic}, and
@@ -392,9 +392,32 @@ features, best validation AUROC varied only from 0.780 to 0.786 for breathing,
 0.813 to 0.815 for cough, and 0.836 to 0.845 for speech. The carried-forward
 800-feature budget was therefore not an isolated validation optimum.
 
-% Queue this full-width float early enough for page 5 while preserving the
-% source-order number of the single-column results table declared below.
-\setcounter{table}{3}
+\begin{table}[!t]
+\caption{Participant-Level Held-Out Results}
+\label{tab:results}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabular}{lrrrrr}
+\toprule
+System & $n$ & AUROC & AUPRC & Bal. Acc. & F1 \\
+\midrule
+Breathing, four-model mean & 312 & \BreathTestAUROC & 0.734 & 0.745 & 0.654 \\
+Cough, four-model mean     & 316 & \CoughTestAUROC & 0.804 & 0.785 & 0.705 \\
+Speech, LightGBM           & 314 & \SpeechTestAUROC & \SpeechTestAUPRC & \SpeechTestBalancedAccuracy & \SpeechTestFOne \\
+\midrule
+Cough+speech feat. concat.$^\dagger$ & 314 & \FeatureFusionTestAUROC & \FeatureFusionTestAUPRC & 0.809 & 0.744 \\
+\textbf{Cough+speech mean} & \textbf{\FusionTestN} & \textbf{\FusionTestAUROC} & \textbf{\FusionTestAUPRC} & \textbf{\FusionTestBalancedAccuracy} & \textbf{\FusionTestFOne} \\
+\bottomrule
+\end{tabular}
+\par\vspace{1pt}\scriptsize Primary AUROC 95\% participant-bootstrap CI:
+\FusionAUCILow{}--\FusionAUCIHigh{}. Matched fusion-minus-branch AUROC CIs were
+\FusionMinusCoughAUCILow{}--\FusionMinusCoughAUCIHigh{} for cough and
+\FusionMinusSpeechAUCILow{}--\FusionMinusSpeechAUCIHigh{} for speech.
+$^\dagger$XGBoost selected by validation from the feature-level bank.
+\end{table}
+
+% Queue the full-width context table early enough to remain on page 5.
 \begin{table*}[!t]
 \caption{Descriptive Context from Internal Coswara Evaluations}
 \label{tab:context}
@@ -412,7 +435,6 @@ This work & Cough--speech probability mean & Participant-disjoint 70/15/15 train
 \bottomrule
 \end{tabular}
 \end{table*}
-\setcounter{table}{2}
 
 \subsection{Held-Out Participant Performance}
 
@@ -457,32 +479,6 @@ Repeating training and validation-guided branch selection with random states
 \MultiSeedAUPRCMean{}$\pm$\MultiSeedAUPRCSD{}. Because all runs used the same
 314 test participants, these standard deviations describe fitting and
 selection variability, not population-sampling uncertainty.
-
-\begin{table}[!t]
-\caption{Participant-Level Held-Out Results}
-\label{tab:results}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{2.6pt}
-\begin{tabular}{lrrrrr}
-\toprule
-System & $n$ & AUROC & AUPRC & Bal. Acc. & F1 \\
-\midrule
-Breathing, four-model mean & 312 & \BreathTestAUROC & 0.734 & 0.745 & 0.654 \\
-Cough, four-model mean     & 316 & \CoughTestAUROC & 0.804 & 0.785 & 0.705 \\
-Speech, LightGBM           & 314 & \SpeechTestAUROC & \SpeechTestAUPRC & \SpeechTestBalancedAccuracy & \SpeechTestFOne \\
-\midrule
-Cough+speech feat. concat.$^\dagger$ & 314 & \FeatureFusionTestAUROC & \FeatureFusionTestAUPRC & 0.809 & 0.744 \\
-\textbf{Cough+speech mean} & \textbf{\FusionTestN} & \textbf{\FusionTestAUROC} & \textbf{\FusionTestAUPRC} & \textbf{\FusionTestBalancedAccuracy} & \textbf{\FusionTestFOne} \\
-\bottomrule
-\end{tabular}
-\par\vspace{1pt}\scriptsize Primary AUROC 95\% participant-bootstrap CI:
-\FusionAUCILow{}--\FusionAUCIHigh{}. Matched fusion-minus-branch AUROC CIs were
-\FusionMinusCoughAUCILow{}--\FusionMinusCoughAUCIHigh{} for cough and
-\FusionMinusSpeechAUCILow{}--\FusionMinusSpeechAUCIHigh{} for speech.
-$^\dagger$XGBoost selected by validation from the feature-level bank.
-\end{table}
-\setcounter{table}{4}
 
 \subsection{Context within Internal Coswara Studies}
 

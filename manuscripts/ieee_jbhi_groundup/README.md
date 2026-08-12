@@ -5,7 +5,7 @@ This folder contains a new manuscript built from the repository's executable met
 ## Scope
 
 - Target: IEEE Journal of Biomedical and Health Informatics.
-- Working title: *Multimodal COVID-19 Respiratory Sound Models: Temporal Stability and External Cough Transfer*.
+- Working title: *Temporal and Cross-Dataset Shifts Reveal Reliability Limits in Multimodal COVID-19 Respiratory-Audio Modeling*.
 - Study type: retrospective reliability and transportability evaluation of respiratory-audio screening models.
 - Primary comparison: fixed cough modality and model family, with frozen Coswara source models scored on the COUGHVID external cohort.
 - Supporting analyses: internal multimodal modeling, architecture checks, retrospective temporal stress testing, calibration, operating points, metadata associations, feature stability, support overlap, and complete-case incremental-value analysis.

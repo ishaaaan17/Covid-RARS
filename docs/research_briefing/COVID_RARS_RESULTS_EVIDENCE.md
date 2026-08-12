@@ -35,7 +35,8 @@ Core generated artifacts:
 
 | Validation setting | Best selected row | AUROC | AUPRC | Balanced accuracy | F1 | n |
 |---|---|---:|---:|---:|---:|---:|
-| Existing participant split | Multimodal cough+speech stacked logistic fusion | `0.897` | `0.863` | `0.825` | `0.752` | `314` |
+| Existing participant split, primary | Multimodal cough+speech equal-weight mean | `0.895` | `0.862` | `0.808` | `0.729` | `314` |
+| Existing participant split, exploratory | Multimodal cough+speech logistic stack | `0.897` | `0.863` | `0.825` | `0.752` | `314` |
 | Time-stratified participant split | Multimodal cough+breath+speech uniform mean | `0.849` | `0.783` | `0.783` | `0.705` | `431` |
 | Early-to-late temporal split | Breath top-4 validation ensemble | `0.698` | `0.896` | `0.656` | `0.751` | `411` |
 
@@ -156,8 +157,10 @@ Multi-seed robustness summary:
 
 | Setting | Mean AUROC | Std |
 |---|---:|---:|
-| Existing participant-split stacked fusion | `0.895` | `0.003` |
-| Strict early-to-late temporal validation | about `0.691` | `0.006` |
+| Existing participant-split equal-weight fusion, five random states | `0.8945` | `0.0068` |
+| Strict early-to-late temporal validation, three random states | about `0.6908` | `0.0066` |
+
+The fixed equal-weight five-state estimate is calculated from the corresponding rows in `paper_metric_table_raw.csv`. Do not substitute `compare_is10_multiseed_stability_summary.csv`: that table groups the final validation-selected method for each state, and the selected fusion rule changes across states.
 
 Reverse temporal result:
 
