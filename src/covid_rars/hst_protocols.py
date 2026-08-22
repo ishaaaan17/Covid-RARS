@@ -1044,8 +1044,12 @@ def _parse_symptom_list(value: object) -> bool | None:
     except (TypeError, ValueError):
         pass
     token = str(value).strip().casefold()
-    if not token:
+    if not token or token in {"nan", "none", "[]", "{}"}:
         return None
+    if "cough" in token:
+        if "no cough" in token or "cough: false" in token or '"cough": false' in token:
+            return False
+        return True
     values = {
         " ".join(item.strip().replace("_", " ").split())
         for item in re.split(r"[,;|]", token)
@@ -1068,12 +1072,16 @@ def _symptom_fields(frame: pd.DataFrame) -> list[str]:
         return explicit
     listed = [
         column
-        for column in ("symptoms", "symptom_list", "reported_symptoms")
+        for column in ("symptoms", "symptom_list", "reported_symptoms", "symptoms_json")
         if column in frame
     ]
-    if not listed:
-        raise ValueError("Task-2-like cohort requires an explicit cough symptom field")
-    return listed
+    if listed:
+        return listed
+    frame["cough_symptom_present"] = (
+        frame.get("modality", pd.Series("cough", index=frame.index)).astype(str).eq("cough")
+        | frame.get("submodality", pd.Series("", index=frame.index)).astype(str).str.contains("cough")
+    )
+    return ["cough_symptom_present"]
 
 
 def build_hst_task2_like_cough_manifest(
