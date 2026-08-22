@@ -90,7 +90,7 @@ def train_dndf_modality_models(
             continue
 
         train_data = mod_data[mod_data["split"] == "train"].copy()
-        val_data = mod_data[mod_data["split"] == "val"].copy()
+        val_data = mod_data[mod_data["split"].isin(["val", "validation"])].copy()
         test_data = mod_data[mod_data["split"] == "test"].copy()
 
         if train_data.empty:
