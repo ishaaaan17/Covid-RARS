@@ -148,6 +148,9 @@ def choose_preprocess_workers(
 
 def _worker_environment() -> dict[str, str]:
     environment = os.environ.copy()
+    src_dir = str(Path(__file__).resolve().parents[1])
+    existing_pythonpath = environment.get("PYTHONPATH", "")
+    environment["PYTHONPATH"] = f"{src_dir}:{existing_pythonpath}" if existing_pythonpath else src_dir
     for variable in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
         environment[variable] = "1"
     return environment
