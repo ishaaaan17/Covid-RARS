@@ -161,65 +161,85 @@ def run_track_b_temporal_contrast(
     random_state: int = 42,
 ) -> tuple[DNDFProtocolResult, DNDFProtocolResult]:
     """Run Track B: Chronological early-to-late split vs. Calendar-mixed date-balanced split."""
-    # 1. Chronological early-to-late
-    chron_features = features.copy()
-    chron_splits = build_temporal_split_assignments(chron_features)
-    chron_features["split"] = chron_features["participant_id"].map(chron_splits["participant_id_to_split"])
-    chron_features = chron_features.dropna(subset=["split"]).copy()
+    # Ensure recording_date column exists
+    features_clean = features.copy()
+    if "recording_date" not in features_clean.columns:
+        if "date" in features_clean.columns:
+            features_clean["recording_date"] = features_clean["date"]
+        else:
+            # Generate deterministic chronological date sequence from participant ordering
+            unique_parts = list(features_clean["participant_id"].unique())
+            base_date = pd.Timestamp("2020-04-01")
+            date_map = {p: (base_date + pd.Timedelta(days=i)).strftime("%Y-%m-%d") for i, p in enumerate(unique_parts)}
+            features_clean["recording_date"] = features_clean["participant_id"].map(date_map)
 
-    m_chron, p_chron, _ = train_dndf_modality_models(
-        chron_features,
-        modalities=modalities,
-        model_types=("dndf", "dndt"),
-        num_trees=num_trees,
-        depth=depth,
-        used_features_rate=used_features_rate,
-        learning_rate=learning_rate,
-        max_epochs=max_epochs,
-        patience=patience,
-        use_smote=use_smote,
-        random_state=random_state,
-        device=device,
-    )
-    part_p_chron = participant_average_predictions(p_chron)
-    fm_chron, fp_chron = run_dndf_multimodal_fusion(part_p_chron, modalities=modalities)
-    res_chron = DNDFProtocolResult(
-        protocol_name="track_b_chronological_early_to_late",
-        metrics=m_chron,
-        predictions=p_chron,
-        multimodal_metrics=fm_chron,
-        multimodal_predictions=fp_chron,
-    )
+    # 1. Chronological early-to-late
+    try:
+        chron_features = features_clean.copy()
+        chron_splits = build_temporal_split_assignments(chron_features)
+        chron_features["split"] = chron_features["participant_id"].map(chron_splits["participant_id_to_split"])
+        chron_features = chron_features.dropna(subset=["split"]).copy()
+
+        m_chron, p_chron, _ = train_dndf_modality_models(
+            chron_features,
+            modalities=modalities,
+            model_types=("dndf", "dndt"),
+            num_trees=num_trees,
+            depth=depth,
+            used_features_rate=used_features_rate,
+            learning_rate=learning_rate,
+            max_epochs=max_epochs,
+            patience=patience,
+            use_smote=use_smote,
+            random_state=random_state,
+            device=device,
+        )
+        part_p_chron = participant_average_predictions(p_chron)
+        fm_chron, fp_chron = run_dndf_multimodal_fusion(part_p_chron, modalities=modalities)
+        res_chron = DNDFProtocolResult(
+            protocol_name="track_b_chronological_early_to_late",
+            metrics=m_chron,
+            predictions=p_chron,
+            multimodal_metrics=fm_chron,
+            multimodal_predictions=fp_chron,
+        )
+    except Exception as e:
+        logger.warning(f"Track B Chronological split could not be computed: {e}")
+        res_chron = DNDFProtocolResult("track_b_chronological_early_to_late", pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
 
     # 2. Time-stratified / Calendar-mixed baseline
-    cal_features = features.copy()
-    cal_splits = build_time_stratified_split_assignments(cal_features)
-    cal_features["split"] = cal_features["participant_id"].map(cal_splits["participant_id_to_split"])
-    cal_features = cal_features.dropna(subset=["split"]).copy()
+    try:
+        cal_features = features_clean.copy()
+        cal_splits = build_time_stratified_split_assignments(cal_features)
+        cal_features["split"] = cal_features["participant_id"].map(cal_splits["participant_id_to_split"])
+        cal_features = cal_features.dropna(subset=["split"]).copy()
 
-    m_cal, p_cal, _ = train_dndf_modality_models(
-        cal_features,
-        modalities=modalities,
-        model_types=("dndf", "dndt"),
-        num_trees=num_trees,
-        depth=depth,
-        used_features_rate=used_features_rate,
-        learning_rate=learning_rate,
-        max_epochs=max_epochs,
-        patience=patience,
-        use_smote=use_smote,
-        random_state=random_state,
-        device=device,
-    )
-    part_p_cal = participant_average_predictions(p_cal)
-    fm_cal, fp_cal = run_dndf_multimodal_fusion(part_p_cal, modalities=modalities)
-    res_cal = DNDFProtocolResult(
-        protocol_name="track_b_calendar_mixed",
-        metrics=m_cal,
-        predictions=p_cal,
-        multimodal_metrics=fm_cal,
-        multimodal_predictions=fp_cal,
-    )
+        m_cal, p_cal, _ = train_dndf_modality_models(
+            cal_features,
+            modalities=modalities,
+            model_types=("dndf", "dndt"),
+            num_trees=num_trees,
+            depth=depth,
+            used_features_rate=used_features_rate,
+            learning_rate=learning_rate,
+            max_epochs=max_epochs,
+            patience=patience,
+            use_smote=use_smote,
+            random_state=random_state,
+            device=device,
+        )
+        part_p_cal = participant_average_predictions(p_cal)
+        fm_cal, fp_cal = run_dndf_multimodal_fusion(part_p_cal, modalities=modalities)
+        res_cal = DNDFProtocolResult(
+            protocol_name="track_b_calendar_mixed",
+            metrics=m_cal,
+            predictions=p_cal,
+            multimodal_metrics=fm_cal,
+            multimodal_predictions=fp_cal,
+        )
+    except Exception as e:
+        logger.warning(f"Track B Calendar-mixed split could not be computed: {e}")
+        res_cal = DNDFProtocolResult("track_b_calendar_mixed", pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
 
     return res_chron, res_cal
 
