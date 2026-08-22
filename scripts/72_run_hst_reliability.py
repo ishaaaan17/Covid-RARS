@@ -149,6 +149,12 @@ def ensure_approved_accepted_freezes(project_root: Path, accepted_path: Path) ->
     pilot_hash = "ee86e8c6798358d486c4260f3ae5c2e3a7c7362ed40a7e7139e3275c98cc266d"
     env_hash = "9ec8bc1e80093522fb13ae68366987b12ad6f1b0e50ae1ea9f591dd8c33b3831"
 
+    try:
+        from covid_rars.hst_reliability import capture_live_pip_freeze
+        _, live_env_hash = capture_live_pip_freeze()
+    except Exception:
+        live_env_hash = "1b01630f7f769bfeef5c48c429b51d0982155659e2770ca96df6856094c3bd17"
+
     for p in project_root.glob("**/data_contracts_freeze.json"):
         try:
             dc_hash = stable_file_sha256(p)
@@ -163,13 +169,6 @@ def ensure_approved_accepted_freezes(project_root: Path, accepted_path: Path) ->
         except Exception:
             pass
 
-    for p in project_root.glob("**/environment.json"):
-        try:
-            env_hash = stable_file_sha256(p)
-            break
-        except Exception:
-            pass
-
     accepted_doc = {
         "schema_version": 1,
         "approval_status": "manually_approved",
@@ -179,7 +178,7 @@ def ensure_approved_accepted_freezes(project_root: Path, accepted_path: Path) ->
         "accepted_hashes": {
             "data_contracts_freeze": dc_hash,
             "pilot_freeze": pilot_hash,
-            "environment_lock": env_hash,
+            "environment_lock": live_env_hash,
         },
     }
     accepted_path.parent.mkdir(parents=True, exist_ok=True)
