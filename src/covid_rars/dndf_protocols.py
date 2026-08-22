@@ -16,7 +16,7 @@ from covid_rars.metrics import (
     binary_metric_bundle,
     labels_to_binary,
 )
-from covid_rars.split import create_stratified_participant_splits
+from covid_rars.split import create_participant_splits
 from covid_rars.temporal_holdout import (
     build_temporal_split_assignments,
     build_time_stratified_split_assignments,
