@@ -701,6 +701,8 @@ class HSTPipeline:
             fingerprint=fingerprint,
             stage=stage,
         ):
+            stage_index = self.STAGES.index(stage) + 1 if stage in self.STAGES else "?"
+            print(f"⏩ [Stage {stage_index}/{len(self.STAGES)}] REUSING verified receipt: {stage}", flush=True)
             reused = dict(previous)
             reused["reused"] = True
             return reused
@@ -737,6 +739,10 @@ class HSTPipeline:
         memory_measurement_active = False
         gpu_memory_metadata = _unmeasured_gpu_memory_metadata()
         try:
+            stage_index = self.STAGES.index(stage) + 1 if stage in self.STAGES else "?"
+            total_stages = len(self.STAGES)
+            print(f"\n🚀 [Stage {stage_index}/{total_stages}] STARTING: {stage} ...", flush=True)
+            started_stage = time.perf_counter()
             if self.stage_hook is not None:
                 self.stage_hook(stage)
             handler = self.stage_handlers.get(stage)
@@ -761,6 +767,8 @@ class HSTPipeline:
             )
             if not output_paths:
                 raise ValueError(f"Stage {stage} produced no auditable outputs")
+            elapsed_stage = time.perf_counter() - started_stage
+            print(f"✅ [Stage {stage_index}/{total_stages}] COMPLETED: {stage} ({elapsed_stage:.2f}s)", flush=True)
             receipt = {
                 **base,
                 "status": "success",

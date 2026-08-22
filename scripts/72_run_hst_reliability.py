@@ -162,6 +162,12 @@ def main() -> None:
             child_identity=capture_process_identity(),
         )
 
+    print("=" * 70, flush=True)
+    print("🔥 COVID-RARS: HIERARCHICAL SPECTROGRAM TRANSFORMER (HST) PIPELINE", flush=True)
+    print(f"   Mode: {args.mode.upper()} | Device: {args.device.upper()} | Target: {args.through}", flush=True)
+    print("=" * 70, flush=True)
+
+    print("\n🔍 Running preflight diagnostics...", flush=True)
     preflight = run_preflight(
         config_path=config_path,
         project_root=project_root,
@@ -171,6 +177,7 @@ def main() -> None:
     )
     if preflight["status"] != "ready":
         raise RuntimeError(f"Preflight blocked the run: {preflight['errors']}")
+    print("✅ Preflight passed successfully! Initializing pipeline...\n", flush=True)
     config = load_controller_config(
         config_path=config_path,
         project_root=project_root,
