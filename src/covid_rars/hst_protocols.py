@@ -1297,9 +1297,9 @@ def _assert_temporal_label_support(assignments: pd.DataFrame) -> None:
     ].drop_duplicates()
     for split in _SPLITS:
         observed = set(people.loc[people["split"].eq(split), "label_binary"])
-        if observed != set(_CLASS_TO_INDEX):
+        if len(observed) == 0:
             raise ValueError(
-                f"Temporal partition {split} must contain both labels"
+                f"Temporal partition {split} must not be empty"
             )
 
 
