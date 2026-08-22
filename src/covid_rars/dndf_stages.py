@@ -95,9 +95,10 @@ def run_dndf_reliability_pipeline(
         random_state=42,
     )
 
-    # 3. Track C: External COUGHVID Transfer (if external data provided)
-    if external_features_df is not None and not external_features_df.empty:
-        logger.info("Running Track C: COUGHVID External Transfer...")
+    # 3. Track C: External COUGHVID Transfer (if valid external acoustic features provided)
+    shared_ext_feats = [c for c in feature_columns(features_df) if c in external_features_df.columns] if (external_features_df is not None and not external_features_df.empty) else []
+    if len(shared_ext_feats) >= 2:
+        logger.info(f"Running Track C: COUGHVID External Transfer (shared {len(shared_ext_feats)} features)...")
         track_c_res = run_track_c_external_transfer(
             source_features=features_df,
             target_external_features=external_features_df,
