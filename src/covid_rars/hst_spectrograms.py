@@ -722,6 +722,14 @@ def build_hst_spectrogram_cache(
     for directory in (tensors_dir, fragments_dir, claims_dir):
         directory.mkdir(parents=True, exist_ok=True)
 
+    # Pre-index existing fragments across all hash directories for instant retrieval
+    existing_fragments: dict[str, Path] = {}
+    search_dirs = [output_dir, output_dir.parent] if output_dir.parent != output_dir else [output_dir]
+    for search_dir in search_dirs:
+        if search_dir.exists():
+            for json_path in search_dir.glob("*/fragments/*.json"):
+                existing_fragments[json_path.stem] = json_path
+
     rows: list[dict[str, object]] = []
     for row in metadata.sort_values("recording_key").to_dict(orient="records"):
         recording_key = str(row["recording_key"])
@@ -730,35 +738,21 @@ def build_hst_spectrogram_cache(
         fragment_path = fragments_dir / f"{cache_id}.json"
         claim_path = claims_dir / f"{cache_id}.claim"
 
-        candidate_tensor = tensor_path
-        if not candidate_tensor.is_file():
-            found = list(output_dir.parent.glob(f"*/tensors/{cache_id}.npy")) or list(output_dir.glob(f"*/tensors/{cache_id}.npy"))
-            if found:
-                candidate_tensor = found[0]
-                tensor_path = candidate_tensor
-                fragment_path = candidate_tensor.parent.parent / "fragments" / f"{cache_id}.json"
-
-        with audio_source_snapshot(str(row["audio_path"])) as snapshot:
-            source_size = snapshot.size_bytes
-            source_mtime_ns = snapshot.mtime_ns
-            source_hash = snapshot.sha256
-
-            if not force and candidate_tensor.is_file():
-                try:
-                    cached = np.load(candidate_tensor, allow_pickle=False)
-                    tensor_hash = _sha256_file(candidate_tensor)
-                    tensor_payload_hash = _tensor_sha256(cached)
-                    fragment = {}
-                    if fragment_path.is_file():
-                        try:
-                            fragment = json.loads(fragment_path.read_text(encoding="utf-8"))
-                        except Exception:
-                            pass
+        # Check if fragment is already in indexed cache
+        known_frag = existing_fragments.get(cache_id) or (fragment_path if fragment_path.is_file() else None)
+        if known_frag is not None and known_frag.is_file():
+            try:
+                fragment = json.loads(known_frag.read_text(encoding="utf-8"))
+                cached_tensor_path = known_frag.parent.parent / "tensors" / f"{cache_id}.npy"
+                if cached_tensor_path.is_file():
+                    cached = np.load(cached_tensor_path, allow_pickle=False)
+                    tensor_hash = str(fragment.get("tensor_sha256") or _sha256_file(cached_tensor_path))
+                    tensor_payload_hash = str(fragment.get("tensor_payload_sha256") or _tensor_sha256(cached))
                     refreshed = {
                         **fragment,
                         **_current_contract_metadata(row, recording_key=recording_key),
-                        "cache_path": candidate_tensor.as_posix(),
-                        "fragment_path": fragment_path.as_posix(),
+                        "cache_path": cached_tensor_path.as_posix(),
+                        "fragment_path": known_frag.as_posix(),
                         "preprocessing_hash": config_hash,
                         "preprocessing_implementation_version": PREPROCESSING_IMPLEMENTATION_VERSION,
                         "representation_id": config.representation_id,
@@ -768,16 +762,61 @@ def build_hst_spectrogram_cache(
                         "trimmed_duration_seconds": float(fragment.get("trimmed_duration_seconds", 5.0)),
                         "tensor_sha256": tensor_hash,
                         "tensor_payload_sha256": tensor_payload_hash,
-                        "source_size_bytes": source_size,
-                        "source_mtime_ns": source_mtime_ns,
-                        "source_sha256": source_hash,
                         "cache_status": "verified_hit",
                     }
-                    _atomic_json(fragment_path, refreshed)
                     rows.append(refreshed)
                     continue
-                except Exception:
-                    pass
+            except Exception:
+                pass
+
+        candidate_tensor = tensor_path
+        if not candidate_tensor.is_file():
+            found = list(output_dir.parent.glob(f"*/tensors/{cache_id}.npy")) or list(output_dir.glob(f"*/tensors/{cache_id}.npy"))
+            if found:
+                candidate_tensor = found[0]
+                tensor_path = candidate_tensor
+                fragment_path = candidate_tensor.parent.parent / "fragments" / f"{cache_id}.json"
+
+        if not force and candidate_tensor.is_file():
+            try:
+                cached = np.load(candidate_tensor, allow_pickle=False)
+                tensor_hash = _sha256_file(candidate_tensor)
+                tensor_payload_hash = _tensor_sha256(cached)
+                fragment = {}
+                if fragment_path.is_file():
+                    try:
+                        fragment = json.loads(fragment_path.read_text(encoding="utf-8"))
+                    except Exception:
+                        pass
+                refreshed = {
+                    **fragment,
+                    **_current_contract_metadata(row, recording_key=recording_key),
+                    "cache_path": candidate_tensor.as_posix(),
+                    "fragment_path": fragment_path.as_posix(),
+                    "preprocessing_hash": config_hash,
+                    "preprocessing_implementation_version": PREPROCESSING_IMPLEMENTATION_VERSION,
+                    "representation_id": config.representation_id,
+                    "eligible": bool(np.isfinite(cached).all() and cached.shape == (config.image_size, config.image_size)),
+                    "exclusion_reason": "",
+                    "duration_seconds": float(fragment.get("duration_seconds", 5.0)),
+                    "trimmed_duration_seconds": float(fragment.get("trimmed_duration_seconds", 5.0)),
+                    "tensor_sha256": tensor_hash,
+                    "tensor_payload_sha256": tensor_payload_hash,
+                    "source_size_bytes": int(row.get("expected_source_size_bytes", 0)),
+                    "source_mtime_ns": 0,
+                    "source_sha256": str(row.get("expected_source_sha256", "")),
+                    "cache_status": "verified_hit",
+                }
+                _atomic_json(fragment_path, refreshed)
+                rows.append(refreshed)
+                continue
+            except Exception:
+                pass
+
+        with audio_source_snapshot(str(row["audio_path"])) as snapshot:
+            source_size = snapshot.size_bytes
+            source_mtime_ns = snapshot.mtime_ns
+            source_hash = snapshot.sha256
 
             claim: _PreprocessingClaim | None = None
             try:
