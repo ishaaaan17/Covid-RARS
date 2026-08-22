@@ -85,10 +85,11 @@ For a reviewer, collaborator, or manuscript writer, start here:
 1. [`docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md`](docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md)
 2. [`docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md`](docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md)
 3. [`docs/research_briefing/DNDF_RELIABILITY_STUDY_BRIEF.md`](docs/research_briefing/DNDF_RELIABILITY_STUDY_BRIEF.md)
-4. [`docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md`](docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md)
-5. [`docs/research_briefing/COVID_RARS_RESULTS_COMPARISON.md`](docs/research_briefing/COVID_RARS_RESULTS_COMPARISON.md)
-6. [`references/verified_source_registry.md`](references/verified_source_registry.md)
-7. [`ARTIFACT.md`](ARTIFACT.md)
+4. [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md)
+5. [`docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md`](docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md)
+6. [`docs/research_briefing/COVID_RARS_RESULTS_COMPARISON.md`](docs/research_briefing/COVID_RARS_RESULTS_COMPARISON.md)
+7. [`references/verified_source_registry.md`](references/verified_source_registry.md)
+8. [`ARTIFACT.md`](ARTIFACT.md)
 
 ## Main Evidence Files
 
@@ -96,6 +97,7 @@ For a reviewer, collaborator, or manuscript writer, start here:
 |---|---|
 | What are the final validation-ladder numbers? | [`docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md`](docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md) |
 | What are the DNDT / DNDF neural forest benchmark results? | [`docs/research_briefing/DNDF_RELIABILITY_STUDY_BRIEF.md`](docs/research_briefing/DNDF_RELIABILITY_STUDY_BRIEF.md) |
+| Where are technical troubleshooting steps & known fixes? | [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) |
 | What explains the complete project first? | [`docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md`](docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md) |
 | How should results be explained in simple language? | [`docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md`](docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md) |
 | Where are source and claim checks documented? | [`references/verified_source_registry.md`](references/verified_source_registry.md) |
