@@ -262,6 +262,11 @@ def run_track_c_external_transfer(
 ) -> DNDFProtocolResult:
     """Run Track C: Coswara-trained cough DNDT/DNDF tested directly on COUGHVID external cough dataset."""
     feat_cols = [c for c in feature_columns(source_features) if c in target_external_features.columns]
+    if len(feat_cols) < 2:
+        logger.warning(
+            f"Track C: Target external features DataFrame does not contain matching acoustic feature columns (shared={len(feat_cols)}). Skipping Track C."
+        )
+        return DNDFProtocolResult("track_c_external_generalization", pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
 
     src_cough = source_features[source_features["modality"] == modality].copy()
     tgt_cough = target_external_features.copy()

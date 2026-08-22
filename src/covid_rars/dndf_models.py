@@ -42,6 +42,9 @@ class NeuralDecisionTree(nn.Module):
         if not (0.0 < used_features_rate <= 1.0):
             raise ValueError(f"used_features_rate must be in (0, 1], got {used_features_rate}")
 
+        if num_features < 1:
+            raise ValueError(f"NeuralDecisionTree requires num_features >= 1, got {num_features}")
+
         self.depth = depth
         self.num_features = num_features
         self.used_features_rate = used_features_rate
@@ -51,7 +54,7 @@ class NeuralDecisionTree(nn.Module):
         self.num_inner_nodes = self.num_leaves - 1
 
         # Feature subsampling indices (feature bagging)
-        used_feature_count = max(1, int(math.ceil(num_features * used_features_rate)))
+        used_feature_count = max(1, min(num_features, int(math.ceil(num_features * used_features_rate))))
         self.used_feature_count = used_feature_count
 
         if random_state is not None:
