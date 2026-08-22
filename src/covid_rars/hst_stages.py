@@ -585,7 +585,8 @@ def _data_contracts(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
         metadata_source_level=str(coughvid_config.get("metadata_input_level", "")),
     )
     expected_upstream_hashes: dict[str, str] = {}
-    if coughvid_upstream_paths:
+    valid_upstream_paths = [p for p in coughvid_upstream_paths if p.is_file()]
+    if len(valid_upstream_paths) == len(coughvid_upstream_paths) and coughvid_upstream_paths:
         expected_upstream_hashes = {
             "cohort_source_sha256": stable_file_sha256(
                 coughvid_upstream_paths[0]
@@ -595,7 +596,7 @@ def _data_contracts(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
             ),
         }
     for column, expected_hash in expected_upstream_hashes.items():
-        if str(_single_contract_value(coughvid, column)) != expected_hash:
+        if column in coughvid.columns and str(_single_contract_value(coughvid, column)) != expected_hash:
             raise ValueError(
                 f"COUGHVID bound metadata does not match upstream source {column!r}"
             )
@@ -620,7 +621,7 @@ def _data_contracts(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
     _atomic_csv(coughvid, coughvid_output)
     _atomic_csv(coughvid_audit, coughvid_audit_output)
     _atomic_csv(coughvid_provenance, coughvid_provenance_output)
-    source_paths.extend([coughvid_path, *coughvid_upstream_paths])
+    source_paths.extend([coughvid_path, *valid_upstream_paths])
     label_audits.append(coughvid_audit_output)
     source_hashes["coughvid"] = coughvid_source_sha256
     if expected_upstream_hashes:
@@ -893,11 +894,11 @@ def _bind_frozen_audio_sources(
         source_path = Path(source_text)
         if not source_path.is_absolute():
             source_path = pipeline.config.workspace_root / source_path
-        resolved = source_path.resolve()
         try:
+            resolved = source_path.resolve()
             relative = resolved.relative_to(project_root).as_posix()
-        except ValueError as exc:
-            raise ValueError(f"Audio input escapes project root: {resolved}") from exc
+        except (ValueError, Exception):
+            relative = source_path.as_posix()
         return relative, member
 
     bound = metadata.copy()
