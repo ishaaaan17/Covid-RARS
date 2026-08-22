@@ -127,6 +127,7 @@ def train_dndf_modality_models(
                 random_state=random_state,
             )
 
+            print(f"\n  ▶ Training {model_name} on [{modality.upper()}] (Samples: train={len(X_train)}, val={len(X_val) if X_val is not None else 0}, test={len(X_test) if X_test is not None else 0})...")
             clf.fit(X_train, y_train, X_val=X_val, y_val=y_val)
 
             # Predict on all available splits

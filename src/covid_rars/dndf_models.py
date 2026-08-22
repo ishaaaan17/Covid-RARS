@@ -401,6 +401,7 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
                     val_loss = F.nll_loss(val_log_probs, torch.tensor(y_val_arr, device=self.device_)).item()
 
                 epoch_record["val_loss"] = val_loss
+                print(f"    Epoch {epoch+1:02d}/{self.max_epochs:02d} - Train Loss: {mean_train_loss:.4f} | Val Loss: {val_loss:.4f}")
                 if val_loss < best_loss:
                     best_loss = val_loss
                     best_state = {k: v.cpu().clone() for k, v in self.model_.state_dict().items()}
@@ -408,7 +409,10 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
                 else:
                     patience_count += 1
                     if patience_count >= self.patience:
+                        print(f"    Early stopping triggered at epoch {epoch+1}.")
                         break
+            else:
+                print(f"    Epoch {epoch+1:02d}/{self.max_epochs:02d} - Train Loss: {mean_train_loss:.4f}")
 
             self.train_history_.append(epoch_record)
 
