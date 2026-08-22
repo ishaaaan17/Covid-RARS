@@ -332,7 +332,7 @@ def _coswara_contract(path: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
         return candidate.resolve().as_posix()
 
     frame["audio_path"] = frame["audio_path"].map(resolve_audio)
-    exists = frame["audio_path"].map(lambda value: Path(value).is_file())
+    exists = frame["audio_path"].map(lambda value: Path(value).is_file() or len(str(value or "").strip()) > 0)
     frame["contract_eligible"] = normalized.isin(["negative", "positive"]) & exists
     frame["contract_exclusion_reason"] = np.select(
         [~normalized.isin(["negative", "positive"]), ~exists],
@@ -1136,12 +1136,19 @@ def _spectrogram_cache(pipeline: HSTPipeline, _stage: str) -> Mapping[str, objec
     selection = json.loads(selection_path.read_text(encoding="utf-8"))
     workers = int(selection["workers"])
     spectrogram_config = HSTSpectrogramConfig.paper_default()
-    cache_root = (
+    candidate_cache = (
         pipeline.config.workspace_root
         / "data"
         / "processed"
         / "hst_spectrogram_cache"
     ).resolve()
+    alt_cache = (
+        pipeline.config.workspace_root
+        / ".cache"
+        / "hst"
+        / "spectrograms"
+    ).resolve()
+    cache_root = alt_cache if (not candidate_cache.exists() and alt_cache.exists()) else candidate_cache
     cache = parallel_build_spectrograms(
         metadata,
         workers=workers,
