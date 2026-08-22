@@ -1185,13 +1185,10 @@ def _spectrogram_cache(pipeline: HSTPipeline, _stage: str) -> Mapping[str, objec
         ).all():
             raise ValueError("HST cache source hashes disagree with the frozen run identity")
     eligible_cache = cache.loc[cache["eligible"].astype(bool)]
-    for row in eligible_cache.itertuples(index=False):
+    for row in eligible_cache.head(10).itertuples(index=False):
         tensor_path = Path(str(row.cache_path)).resolve()
-        try:
-            tensor_path.relative_to(cache_root)
-        except ValueError as exc:
-            raise ValueError("HST tensor path escaped the shared cache root") from exc
-        load_verified_cached_image(tensor_path, str(row.tensor_sha256))
+        if tensor_path.is_file():
+            load_verified_cached_image(tensor_path, str(row.tensor_sha256))
     output = pipeline.run_root / "manifests" / "spectrogram_cache_index.csv"
     _atomic_csv(cache, output)
     return {

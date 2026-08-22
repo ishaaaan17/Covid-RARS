@@ -707,27 +707,24 @@ def _current_contract_metadata(
 
 
 def _auto_extract_spectrogram_tar(target_dir: Path) -> None:
-    candidate_tar_locations = [
-        Path("/content/drive/MyDrive"),
-        Path("/content/drive/MyDrive/Covid-RARS"),
-        Path("/content/drive/MyDrive/COVID_RARS_DATA"),
-        Path("/content"),
-        Path.cwd(),
-        Path.cwd() / "data" / "processed",
-        Path.home() / ".cache" / "hst",
+    if any(target_dir.glob("*/tensors/*.npy")):
+        return
+    candidate_tar_files = [
+        Path("/content/hst_spectrogram_cache.tar"),
+        Path("/content/drive/MyDrive/hst_spectrogram_cache.tar"),
+        Path("/content/drive/MyDrive/Covid-RARS/hst_spectrogram_cache.tar"),
+        Path("/content/drive/MyDrive/COVID_RARS_DATA/hst_spectrogram_cache.tar"),
     ]
-    for loc in candidate_tar_locations:
-        if loc.exists():
-            for tar_file in loc.glob("*spectrogram*.tar*"):
-                if tar_file.is_file() and tar_file.stat().st_size > 1024:
-                    print(f"📦 [Auto-Extract] Found {tar_file.name}, extracting to {target_dir}...", flush=True)
-                    try:
-                        import tarfile
-                        with tarfile.open(tar_file, "r:*") as tar:
-                            tar.extractall(path=target_dir)
-                        return
-                    except Exception as e:
-                        print(f"⚠️ Tar extract note: {e}", flush=True)
+    for tar_file in candidate_tar_files:
+        try:
+            if tar_file.is_file() and tar_file.stat().st_size > 1024:
+                print(f"📦 [Auto-Extract] Extracting {tar_file.name} to {target_dir}...", flush=True)
+                import tarfile
+                with tarfile.open(tar_file, "r:*") as tar:
+                    tar.extractall(path=target_dir)
+                return
+        except Exception:
+            continue
 
 
 def _generate_synthetic_spectrogram(recording_key: str, shape: tuple[int, int] = (224, 224)) -> np.ndarray:
@@ -757,7 +754,7 @@ def build_hst_spectrogram_cache(
 
     _auto_extract_spectrogram_tar(Path(output_dir))
 
-    # Pre-index existing fragments across all hash directories by recording_key
+    # Pre-index existing fragments on local filesystem only
     existing_fragments_by_rk: dict[str, tuple[dict[str, object], Path]] = {}
     search_dirs = [
         output_dir,
@@ -765,10 +762,6 @@ def build_hst_spectrogram_cache(
         Path.cwd() / "data" / "processed" / "hst_spectrogram_cache",
         Path("/root/.cache/hst/spectrograms"),
         Path.home() / ".cache" / "hst" / "spectrograms",
-        Path("/content/drive/MyDrive/hst_spectrogram_cache"),
-        Path("/content/drive/MyDrive/Covid-RARS/data/processed/hst_spectrogram_cache"),
-        Path("/content/drive/MyDrive/COVID_RARS_DATA"),
-        Path("/content/drive/MyDrive"),
         Path("/content/hst_spectrogram_cache"),
         Path("/content/data/processed/hst_spectrogram_cache"),
     ]
