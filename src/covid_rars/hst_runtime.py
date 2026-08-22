@@ -864,18 +864,11 @@ class RuntimeLease:
                     raise RuntimeStateError(
                         "Process probe returned an invalid state"
                     ) from exc
-        if owner_state is not ProcessLiveness.DEAD or not expired:
-            if owner_state is ProcessLiveness.ALIVE:
-                reason = "owner is alive"
-            elif owner_state is ProcessLiveness.UNKNOWN:
-                reason = "owner liveness is unknown"
-            else:
-                reason = "heartbeat is not stale"
-            raise BlockingIOError(
-                f"{self.kind} lease is not recoverable because {reason}: "
-                f"{self.record_path}"
-            )
-        return previous_token
+        if owner.pid == os.getpid() or owner_state is ProcessLiveness.DEAD or expired or owner_state is not ProcessLiveness.ALIVE:
+            return previous_token
+        raise BlockingIOError(
+            f"{self.kind} lease is held by active PID {owner.pid}: {self.record_path}"
+        )
 
     def __enter__(self) -> RuntimeLease:
         with self._mutex:
