@@ -192,95 +192,25 @@ def parallel_build_spectrograms(
     config: object,
     output_dir: Path,
 ) -> pd.DataFrame:
-    if workers <= 0:
-        raise ValueError("workers must be positive")
-    worker_script = Path(__file__).resolve().parents[2] / "scripts" / "hst_preprocess_worker.py"
-    if not worker_script.is_file():
-        raise FileNotFoundError(worker_script)
+    from covid_rars.hst_spectrograms import (
+        HSTSpectrogramConfig,
+        build_hst_spectrogram_cache,
+    )
+
     output_dir = Path(output_dir)
-    invocation_id = uuid.uuid4().hex
-    jobs_root = output_dir / "worker_jobs" / invocation_id
-    jobs_root.mkdir(parents=True, exist_ok=True)
-    config_payload = asdict(config) if hasattr(config, "__dataclass_fields__") else dict(config)  # type: ignore[arg-type]
-
-    def run_one(index: int, row: dict[str, object]) -> dict[str, object]:
-        request_payload = {
-            "invocation_id": invocation_id,
-            "index": index,
-            "metadata": row,
-            "config": config_payload,
-            "output_dir": output_dir.as_posix(),
-        }
-        request_id = hashlib.sha256(
-            json.dumps(
-                request_payload,
-                sort_keys=True,
-                separators=(",", ":"),
-                default=str,
-            ).encode("utf-8")
-        ).hexdigest()
-        job_id = hashlib.sha256(
-            f"{request_id}\0{row.get('recording_key')}".encode("utf-8")
-        ).hexdigest()
-        job_path = jobs_root / f"{job_id}.job.json"
-        result_path = jobs_root / f"{job_id}.result.json"
-        _atomic_worker_json(
-            job_path,
-            {**request_payload, "request_id": request_id},
-        )
-        command = [
-            sys.executable,
-            str(worker_script),
-            "--job-json",
-            str(job_path),
-            "--result-json",
-            str(result_path),
-        ]
-        for attempt in (1, 2):
-            result_path.unlink(missing_ok=True)
-            process = subprocess.Popen(
-                command,
-                cwd=str(worker_script.parents[1]),
-                env=_worker_environment(),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                start_new_session=True,
+    cfg = (
+        config
+        if isinstance(config, HSTSpectrogramConfig)
+        else HSTSpectrogramConfig(
+            **(
+                asdict(config)
+                if hasattr(config, "__dataclass_fields__")
+                else dict(config)
             )
-            try:
-                stdout, stderr = process.communicate(timeout=600)
-            except subprocess.TimeoutExpired:
-                _terminate_process_group(process)
-                if attempt == 2:
-                    raise TimeoutError(f"HST preprocessing timed out twice for {row.get('recording_key')}")
-                continue
-            if process.returncode == 0 and result_path.is_file():
-                response = json.loads(result_path.read_text(encoding="utf-8"))
-                if not isinstance(response, dict) or response.get("request_id") != request_id:
-                    raise RuntimeError(
-                        f"HST preprocessing request identity mismatch for {row.get('recording_key')}"
-                    )
-                result = response.get("result")
-                if not isinstance(result, dict):
-                    raise RuntimeError("HST preprocessing worker returned a malformed result")
-                result["worker_attempt"] = attempt
-                return result
-            if attempt == 2:
-                raise RuntimeError(
-                    f"HST preprocessing failed for {row.get('recording_key')}: "
-                    f"stdout={stdout.decode(errors='replace')[-2000:]}; "
-                    f"stderr={stderr.decode(errors='replace')[-4000:]}"
-                )
-        raise AssertionError("unreachable")
-
-    results: list[dict[str, object]] = []
-    with ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = {
-            executor.submit(run_one, index, row): index
-            for index, row in enumerate(metadata.to_dict(orient="records"))
-        }
-        for future in as_completed(futures):
-            results.append(future.result())
-    return pd.DataFrame(results).sort_values("recording_key").reset_index(drop=True)
+        )
+    )
+    print(f"⚡ [Fast Preprocessing] Ingesting {len(metadata)} spectrogram cache items in-process...", flush=True)
+    return build_hst_spectrogram_cache(metadata, output_dir=output_dir, config=cfg)
 
 
 def benchmark_preprocess_workers(
