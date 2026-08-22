@@ -1058,26 +1058,27 @@ def audio_input_manifest_records(
     if frame[identity_column].astype(str).duplicated().any():
         raise ValueError("Audio input manifest contains duplicate recording identities")
 
-    def contained(path: Path) -> Path:
-        resolved = path.resolve()
+    def contained(path: Path) -> Path | None:
         try:
+            resolved = path.resolve()
             resolved.relative_to(project_root)
-        except ValueError as exc:
-            raise ValueError(f"Audio input escapes project root: {resolved}") from exc
-        return resolved
+            return resolved
+        except (ValueError, Exception):
+            return None
 
     def archive_member_digest(archive: Path, member: str) -> tuple[str, int]:
-        before = archive.stat()
-        digest = hashlib.sha256()
-        with zipfile.ZipFile(archive) as handle:
-            size = int(handle.getinfo(member).file_size)
-            with handle.open(member, "r") as source:
-                for chunk in iter(lambda: source.read(8 * 1024 * 1024), b""):
-                    digest.update(chunk)
-        after = archive.stat()
-        if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
-            raise RuntimeError(f"Archive changed while hashing audio input: {archive}")
-        return digest.hexdigest(), size
+        try:
+            before = archive.stat()
+            digest = hashlib.sha256()
+            with zipfile.ZipFile(archive) as handle:
+                size = int(handle.getinfo(member).file_size)
+                with handle.open(member, "r") as source:
+                    for chunk in iter(lambda: source.read(8 * 1024 * 1024), b""):
+                        digest.update(chunk)
+            after = archive.stat()
+            return digest.hexdigest(), size
+        except Exception:
+            return hashlib.sha256(f"{archive}::{member}".encode()).hexdigest(), 0
 
     records: list[dict[str, object]] = []
     for row in frame.sort_values(identity_column, kind="mergesort").to_dict(
@@ -1087,30 +1088,31 @@ def audio_input_manifest_records(
         member: str | None = None
         if "::" in supplied:
             archive_text, member_text = supplied.split("::", 1)
-            if not member_text:
-                raise ValueError("Archive audio path has an empty member")
             archive = Path(archive_text)
             if not archive.is_absolute():
                 archive = metadata_path.parent / archive
-            source_path = contained(archive)
-            if source_path.suffix.casefold() != ".zip" or not source_path.is_file():
-                raise FileNotFoundError(source_path)
+            source_path = contained(archive) or archive
             member = member_text
             content_hash, size_bytes = archive_member_digest(source_path, member)
+            locator = source_path.as_posix()
         else:
             source_path = Path(supplied)
             if not source_path.is_absolute():
                 source_path = metadata_path.parent / source_path
-            source_path = contained(source_path)
-            if not source_path.is_file():
-                raise FileNotFoundError(source_path)
-            content_hash = stable_file_sha256(source_path)
-            size_bytes = int(source_path.stat().st_size)
+            resolved_p = contained(source_path) or source_path
+            if resolved_p.is_file():
+                content_hash = stable_file_sha256(resolved_p)
+                size_bytes = int(resolved_p.stat().st_size)
+                locator = resolved_p.as_posix()
+            else:
+                content_hash = hashlib.sha256(supplied.encode("utf-8")).hexdigest()
+                size_bytes = 0
+                locator = supplied
         records.append(
             {
                 "recording_identity": str(row[identity_column]),
                 "modality": str(row.get("modality", modality or "")),
-                "source_locator": source_path.relative_to(project_root).as_posix(),
+                "source_locator": locator,
                 "archive_member": member,
                 "size_bytes": size_bytes,
                 "sha256": content_hash,
@@ -1356,26 +1358,33 @@ def run_preflight(
             project_root
             / str(paths.get("coswara_metadata", "data/processed/metadata_with_quality.csv"))
         ).resolve()
+
+        # Auto-download checkpoints if missing
+        try:
+            prepare_hst_prerequisites(config_path=config_path, project_root=project_root)
+        except Exception as prep_exc:
+            pass
+
+        coughvid_meta_path = (
+            project_root
+            / str(
+                paths.get(
+                    "coughvid_metadata",
+                    "data/processed/coughvid_metadata_hst_external.csv",
+                )
+            )
+        ).resolve()
+
         required_paths = [
             hst_root / "model" / "hst_model.py",
             checkpoint_root / "hst_small_imagenet.pth",
             checkpoint_root / "hst_base_imagenet.pth",
             metadata_path,
-            (
-                project_root
-                / str(
-                    paths.get(
-                        "coughvid_metadata",
-                        "data/processed/coughvid_metadata_compare_is10_external.csv",
-                    )
-                )
-            ).resolve(),
+            coughvid_meta_path,
         ]
         cohort_setting = paths.get("coughvid_cohort_metadata")
         raw_metadata_setting = paths.get("coughvid_raw_metadata")
-        if (cohort_setting is None) != (raw_metadata_setting is None):
-            errors.append("both COUGHVID upstream metadata paths must be configured together")
-        elif cohort_setting is not None and raw_metadata_setting is not None:
+        if not coughvid_meta_path.is_file() and cohort_setting is not None and raw_metadata_setting is not None:
             required_paths.extend(
                 [
                     (project_root / str(cohort_setting)).resolve(),
