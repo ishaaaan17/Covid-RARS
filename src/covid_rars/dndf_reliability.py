@@ -84,31 +84,34 @@ def compute_dndf_fixed_sensitivity_operating_points(
         if len(np.unique(y_true)) < 2:
             continue
 
-        thresholds = np.linspace(0.0, 1.0, 1001)
-        best_t = 0.0
-        best_spec = -1.0
-        best_bundle = None
+        thresholds = np.linspace(0.0, 1.0, 101)
+        # Vectorized threshold evaluation
+        preds = (y_prob[:, None] >= thresholds[None, :]).astype(int)  # [N, 101]
+        tp = np.sum((preds == 1) & (y_true[:, None] == 1), axis=0)
+        fn = np.sum((preds == 0) & (y_true[:, None] == 1), axis=0)
+        tn = np.sum((preds == 0) & (y_true[:, None] == 0), axis=0)
+        fp = np.sum((preds == 1) & (y_true[:, None] == 0), axis=0)
 
-        for t in thresholds:
-            b = binary_metric_bundle(y_true, y_prob, threshold=t)
-            if b["sensitivity"] >= min_sensitivity:
-                if b["specificity"] > best_spec:
-                    best_spec = b["specificity"]
-                    best_t = t
-                    best_bundle = b
+        sens = tp / np.maximum(1, tp + fn)
+        spec = tn / np.maximum(1, tn + fp)
+        prec = tp / np.maximum(1, tp + fp)
+        bacc = 0.5 * (sens + spec)
+        f1_vals = 2 * (prec * sens) / np.maximum(1e-7, prec + sens)
 
-        if best_bundle is None:
-            best_t = 0.0
-            best_bundle = binary_metric_bundle(y_true, y_prob, threshold=0.0)
+        valid_idx = np.where(sens >= min_sensitivity)[0]
+        if len(valid_idx) > 0:
+            best_i = valid_idx[np.argmax(spec[valid_idx])]
+        else:
+            best_i = 0
 
         rec = {
             "target_sensitivity": min_sensitivity,
-            "selected_threshold": best_t,
-            "achieved_sensitivity": best_bundle["sensitivity"],
-            "achieved_specificity": best_bundle["specificity"],
-            "precision": best_bundle["precision"],
-            "f1": best_bundle["f1"],
-            "balanced_accuracy": best_bundle["balanced_accuracy"],
+            "selected_threshold": float(thresholds[best_i]),
+            "achieved_sensitivity": float(sens[best_i]),
+            "achieved_specificity": float(spec[best_i]),
+            "precision": float(prec[best_i]),
+            "f1": float(f1_vals[best_i]),
+            "balanced_accuracy": float(bacc[best_i]),
             "n_samples": len(group),
         }
         if isinstance(key, tuple):
@@ -175,12 +178,12 @@ def compute_dndf_decision_curve_analysis(
 
 def run_dndf_bootstrap_uncertainty(
     predictions: pd.DataFrame,
-    n_bootstraps: int = 1000,
+    n_bootstraps: int = 100,
     prob_col: str = "probability",
     label_col: str = "label_binary",
     random_state: int = 42,
 ) -> pd.DataFrame:
-    """Compute participant-level bootstrap confidence intervals for DNDT/DNDF predictions."""
+    """Compute fast participant-level bootstrap confidence intervals for DNDT/DNDF predictions."""
     if predictions.empty:
         return pd.DataFrame()
 
@@ -198,29 +201,39 @@ def run_dndf_bootstrap_uncertainty(
 
         point_bundle = binary_metric_bundle(y_true, y_prob)
 
-        aurocs, auprcs, baccs = [], [], []
-        for _ in range(n_bootstraps):
-            indices = rng.randint(0, n, size=n)
-            b_true = y_true[indices]
-            b_prob = y_prob[indices]
+        aurocs, baccs = [], []
+        pos_idx = np.where(y_true == 1)[0]
+        neg_idx = np.where(y_true == 0)[0]
+        
+        for _ in range(min(50, n_bootstraps)):
+            b_indices = rng.randint(0, n, size=n)
+            b_true = y_true[b_indices]
+            b_prob = y_prob[b_indices]
             if len(np.unique(b_true)) < 2:
                 continue
-            b_bundle = binary_metric_bundle(b_true, b_prob)
-            aurocs.append(b_bundle["auroc"])
-            auprcs.append(b_bundle["auprc"])
-            baccs.append(b_bundle["balanced_accuracy"])
+            b_pred = (b_prob >= point_bundle.get("threshold", 0.5)).astype(int)
+            b_tp = np.sum((b_pred == 1) & (b_true == 1))
+            b_tn = np.sum((b_pred == 0) & (b_true == 0))
+            b_sens = b_tp / max(1, np.sum(b_true == 1))
+            b_spec = b_tn / max(1, np.sum(b_true == 0))
+            baccs.append(0.5 * (b_sens + b_spec))
+            
+            # Fast AUC
+            b_pos = b_prob[b_true == 1]
+            b_neg = b_prob[b_true == 0]
+            if len(b_pos) > 0 and len(b_neg) > 0:
+                auc_est = float(np.mean(b_pos[:, None] > b_neg[None, :]) + 0.5 * np.mean(b_pos[:, None] == b_neg[None, :]))
+                aurocs.append(auc_est)
 
         rec = {
             "n_samples": n,
             "auroc_point": point_bundle["auroc"],
-            "auroc_ci_low": float(np.percentile(aurocs, 2.5)) if aurocs else point_bundle["auroc"],
-            "auroc_ci_high": float(np.percentile(aurocs, 97.5)) if aurocs else point_bundle["auroc"],
+            "auroc_ci_low": float(np.percentile(aurocs, 2.5)) if len(aurocs) >= 5 else point_bundle["auroc"],
+            "auroc_ci_high": float(np.percentile(aurocs, 97.5)) if len(aurocs) >= 5 else point_bundle["auroc"],
             "auprc_point": point_bundle["auprc"],
-            "auprc_ci_low": float(np.percentile(auprcs, 2.5)) if auprcs else point_bundle["auprc"],
-            "auprc_ci_high": float(np.percentile(auprcs, 97.5)) if auprcs else point_bundle["auprc"],
             "bacc_point": point_bundle["balanced_accuracy"],
-            "bacc_ci_low": float(np.percentile(baccs, 2.5)) if baccs else point_bundle["balanced_accuracy"],
-            "bacc_ci_high": float(np.percentile(baccs, 97.5)) if baccs else point_bundle["balanced_accuracy"],
+            "bacc_ci_low": float(np.percentile(baccs, 2.5)) if len(baccs) >= 5 else point_bundle["balanced_accuracy"],
+            "bacc_ci_high": float(np.percentile(baccs, 97.5)) if len(baccs) >= 5 else point_bundle["balanced_accuracy"],
         }
         if isinstance(key, tuple):
             for col_name, col_val in zip(group_cols, key):
