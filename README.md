@@ -127,6 +127,8 @@ The numbered scripts under [`scripts/`](scripts/) document the execution order. 
 | Temporal validation | `44_temporal_holdout_audit.py`, `45_temporal_paper_summaries.py`, `46_temporal_month_causal_audit.py` |
 | Strong acoustic and OpenSMILE/IS10 branch | `47_run_strong_baseline.py` through `58_run_compare_is10_final_validation.py` |
 | Reviewer evidence additions | `59_run_final_uncertainty_calibration.py` through `68_run_incremental_audio_metadata_value.py` |
+| Protocol-matched CV & HST branch | `69_run_protocol_matched_cv.py` through `78_prepare_hst_coughvid_metadata.py` |
+| DNDT / DNDF neural decision forest branch | `79_run_dndf_reliability.py`, `80_make_dndf_evidence_pack.py` |
 
 ## Datasets
 

@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "source": {
+    "repository": "https://github.com/Rofiquldk1/COVID-19-Detection-from-Cough-Sound",
+    "paper": "Robust COVID-19 detection from cough sounds using deep neural decision tree and forest: A comprehensive cross-datasets evaluation",
+    "journal": "Expert Systems with Applications",
+    "year": 2026,
+    "doi": "10.1016/j.eswa.2026.131235",
+    "arxiv": "2501.01117"
+  },
+  "paths": {
+    "coswara_features": "data/processed/features_compare_is10_merged.csv",
+    "coswara_top800_features": "data/processed/features_compare_is10_top800.csv",
+    "coughvid_features": "data/processed/features_compare_is10_coughvid_cough_top800.csv",
+    "output_directory": "reports/dndf"
+  },
+  "architecture": {
+    "dndt": {
+      "depth": 4,
+      "used_features_rate": 1.0,
+      "num_classes": 2,
+      "temperature": 1.0
+    },
+    "dndf": {
+      "num_trees": 20,
+      "depth": 4,
+      "used_features_rate": 0.8,
+      "num_classes": 2,
+      "temperature": 1.0
+    }
+  },
+  "training": {
+    "learning_rate": 0.01,
+    "weight_decay": 1e-4,
+    "batch_size": 32,
+    "max_epochs": 50,
+    "patience": 10,
+    "use_smote": true,
+    "feature_selection": "none",
+    "optimizer": "adamw",
+    "loss": "cross_entropy"
+  },
+  "experiment": {
+    "name": "dndf_integrated_reliability",
+    "primary_modalities": ["cough", "speech"],
+    "secondary_modalities": ["breath"],
+    "seeds": [1, 2, 5, 12, 40, 52, 72, 2002, 4002, 6002],
+    "protocols": [
+      "track_a_repeated_holdout",
+      "track_b_chronological_early_to_late",
+      "track_b_calendar_mixed",
+      "track_c_external_transfer"
+    ]
+  },
+  "fusion": {
+    "methods": ["uniform_mean", "validation_weighted", "stacked_logistic"],
+    "hybrid_comparator_weights": {
+      "dndf": 0.5,
+      "comparator": 0.5
+    }
+  },
+  "audits": {
+    "calibration_bins": 10,
+    "fixed_sensitivity_target": 0.90,
+    "dca_grid": [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
+    "bootstrap_replicates": 1000
+  }
+}

@@ -26,5 +26,8 @@ Optional review/debug notebooks:
 6. `06_calibration_fusion_review.ipynb` - branch calibration, reliability diagram, weighted-vs-uniform fusion.
 7. `07_shift_confounding_review.ipynb` - subgroup metrics, quality sensitivity, metadata coverage, limitation notes.
 8. `08_publication_grade_experiments.ipynb` - publication extras as a separate notebook if you do not use the single full runner.
+9. `09_HST_RELIABILITY_E2E.ipynb` - hierarchical spectrogram transformer reliability pipeline.
+10. `10_HST_CAPACITY_INTERNAL_FUSION.ipynb` - HST capacity and internal fusion.
+11. `11_DNDT_DNDF_RELIABILITY_E2E.ipynb` - Deep Neural Decision Tree/Forest (DNDT/DNDF) Colab-ready reliability study.
 
 Rule: core logic lives in `src/covid_rars/`; notebooks orchestrate, inspect, visualize, and save report assets.
