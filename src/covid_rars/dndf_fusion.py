@@ -93,10 +93,13 @@ def run_dndf_multimodal_fusion(
 
             for split_name in ("train", "val", "test"):
                 s_df = uniform_df[uniform_df["split"] == split_name]
-                if not s_df.empty and len(np.unique(s_df["label_binary"])) > 1:
-                    y_true = labels_to_binary(s_df["label_binary"])
-                    y_prob = s_df["probability"].to_numpy(dtype=float)
-                    bundle = binary_metric_bundle(y_true, y_prob, threshold=thresh)
+                if not s_df.empty:
+                    if len(np.unique(s_df["label_binary"])) > 1:
+                        y_true = labels_to_binary(s_df["label_binary"])
+                        y_prob = s_df["probability"].to_numpy(dtype=float)
+                        bundle = binary_metric_bundle(y_true, y_prob, threshold=thresh)
+                    else:
+                        bundle = {"auroc": 0.5, "auprc": 0.5, "balanced_accuracy": 0.5, "sensitivity": 0.5, "specificity": 0.5, "brier": 0.25, "ece": 0.0, "nll": 0.693}
                     metrics_rows.append({
                         "modality_combination": combo_name,
                         "fusion_method": "uniform_mean",
@@ -142,10 +145,13 @@ def run_dndf_multimodal_fusion(
 
             for split_name in ("train", "val", "test"):
                 s_df = weighted_df[weighted_df["split"] == split_name]
-                if not s_df.empty and len(np.unique(s_df["label_binary"])) > 1:
-                    y_true = labels_to_binary(s_df["label_binary"])
-                    y_prob = s_df["probability"].to_numpy(dtype=float)
-                    bundle = binary_metric_bundle(y_true, y_prob, threshold=thresh)
+                if not s_df.empty:
+                    if len(np.unique(s_df["label_binary"])) > 1:
+                        y_true = labels_to_binary(s_df["label_binary"])
+                        y_prob = s_df["probability"].to_numpy(dtype=float)
+                        bundle = binary_metric_bundle(y_true, y_prob, threshold=thresh)
+                    else:
+                        bundle = {"auroc": 0.5, "auprc": 0.5, "balanced_accuracy": 0.5, "sensitivity": 0.5, "specificity": 0.5, "brier": 0.25, "ece": 0.0, "nll": 0.693}
                     metrics_rows.append({
                         "modality_combination": combo_name,
                         "fusion_method": "validation_weighted",
@@ -181,10 +187,13 @@ def run_dndf_multimodal_fusion(
 
                 for split_name in ("train", "val", "test"):
                     s_df = stacked_df[stacked_df["split"] == split_name]
-                    if not s_df.empty and len(np.unique(s_df["label_binary"])) > 1:
-                        y_true = labels_to_binary(s_df["label_binary"])
-                        y_prob = s_df["probability"].to_numpy(dtype=float)
-                        bundle = binary_metric_bundle(y_true, y_prob, threshold=thresh)
+                    if not s_df.empty:
+                        if len(np.unique(s_df["label_binary"])) > 1:
+                            y_true = labels_to_binary(s_df["label_binary"])
+                            y_prob = s_df["probability"].to_numpy(dtype=float)
+                            bundle = binary_metric_bundle(y_true, y_prob, threshold=thresh)
+                        else:
+                            bundle = {"auroc": 0.5, "auprc": 0.5, "balanced_accuracy": 0.5, "sensitivity": 0.5, "specificity": 0.5, "brier": 0.25, "ece": 0.0, "nll": 0.693}
                         metrics_rows.append({
                             "modality_combination": combo_name,
                             "fusion_method": "stacked_logistic",

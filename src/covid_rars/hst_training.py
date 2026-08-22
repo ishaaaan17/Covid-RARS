@@ -3805,12 +3805,12 @@ def train_hst_fold(
                 }
             )
             print(
-                f"  ▶ [Epoch {epoch:03d}/{config.max_epochs:03d}] "
+                f"  >> [Epoch {epoch:03d}/{config.max_epochs:03d}] "
                 f"Train Loss: {history_rows[-1]['train_loss']:.4f} | "
                 f"Val AUROC: {selection['auroc']:.4f} | "
                 f"Val AUPRC: {selection['auprc']:.4f} | "
                 f"LR: {scheduler.get_last_lr()[0]:.6f} "
-                f"{'🌟 (New Best)' if improved else ''}",
+                f"{'[New Best]' if improved else ''}",
                 flush=True,
             )
             completed_epoch_schedules.append(epoch_batch_schedule)

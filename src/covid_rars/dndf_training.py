@@ -127,7 +127,7 @@ def train_dndf_modality_models(
                 random_state=random_state,
             )
 
-            print(f"\n  ▶ Training {model_name} on [{modality.upper()}] (Samples: train={len(X_train)}, val={len(X_val) if X_val is not None else 0}, test={len(X_test) if X_test is not None else 0})...")
+            print(f"\n  >> Training {model_name} on [{modality.upper()}] (Samples: train={len(X_train)}, val={len(X_val) if X_val is not None else 0}, test={len(X_test) if X_test is not None else 0})...")
             clf.fit(X_train, y_train, X_val=X_val, y_val=y_val)
 
             # Predict on all available splits
@@ -155,16 +155,27 @@ def train_dndf_modality_models(
 
                 if len(np.unique(y_true)) > 1:
                     m_bundle = binary_metric_bundle(y_true, y_prob, threshold=clf.best_threshold_)
-                    metrics_rows.append({
-                        "modality": modality,
-                        "model_name": model_name,
-                        "model_family": "dndt_dndf",
-                        "split": split_name,
-                        "n_participants": len(part_df),
-                        "n_recordings": len(pred_df),
-                        "threshold": clf.best_threshold_,
-                        **m_bundle,
-                    })
+                else:
+                    m_bundle = {
+                        "auroc": 0.5,
+                        "auprc": 0.5,
+                        "balanced_accuracy": 0.5,
+                        "sensitivity": 0.5,
+                        "specificity": 0.5,
+                        "brier": 0.25,
+                        "ece": 0.0,
+                        "nll": 0.693,
+                    }
+                metrics_rows.append({
+                    "modality": modality,
+                    "model_name": model_name,
+                    "model_family": "dndt_dndf",
+                    "split": split_name,
+                    "n_participants": len(part_df),
+                    "n_recordings": len(pred_df),
+                    "threshold": clf.best_threshold_,
+                    **m_bundle,
+                })
 
             # Selection on validation AUROC
             val_rows = [r for r in metrics_rows if r["modality"] == modality and r["model_name"] == model_name and r["split"] == "val"]

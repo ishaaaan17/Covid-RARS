@@ -2,12 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import librosa
 import numpy as np
 import pandas as pd
-
-from covid_rars.audio_io import load_audio
-from covid_rars.preprocess import preprocess_for_features
 
 
 def _stat_features(prefix: str, values: np.ndarray) -> dict[str, float]:
@@ -18,6 +14,7 @@ def _stat_features(prefix: str, values: np.ndarray) -> dict[str, float]:
 
 
 def extract_mfcc_features(y: np.ndarray, sample_rate: int, n_mfcc: int = 40) -> dict[str, float]:
+    import librosa
     mfcc = librosa.feature.mfcc(y=y, sr=sample_rate, n_mfcc=n_mfcc)
     delta = librosa.feature.delta(mfcc)
     delta2 = librosa.feature.delta(mfcc, order=2)
@@ -47,6 +44,8 @@ def extract_mfcc_features(y: np.ndarray, sample_rate: int, n_mfcc: int = 40) -> 
 
 
 def extract_features_for_row(row: pd.Series) -> dict[str, object]:
+    from covid_rars.audio_io import load_audio
+    from covid_rars.preprocess import preprocess_for_features
     y, sample_rate, _ = load_audio(Path(row["audio_path"]))
     processed, event_info = preprocess_for_features(y, sample_rate, str(row.get("modality", "unknown")))
     features = extract_mfcc_features(processed, sample_rate=sample_rate, n_mfcc=40)
