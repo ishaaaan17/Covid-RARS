@@ -55,14 +55,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--mode", choices=["smoke", "pilot", "full"], default="smoke")
     parser.add_argument("--device", choices=["cpu", "cuda"], default="cpu")
-    parser.add_argument("--through", choices=HSTPipeline.STAGES, default="evidence_pack")
+    parser.add_argument("--through", choices=HSTPipeline.STAGES, default=None)
     parser.add_argument("--expected-run-id", default="auto")
     parser.add_argument("--force-stage", action="append", default=[])
     parser.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--detach", action="store_true")
     parser.add_argument("--status-id")
     parser.add_argument("--launch-id")
-    return parser.parse_args()
+    parsed = parser.parse_args()
+    if parsed.through is None:
+        parsed.through = HSTPipeline.MODE_LIMITS.get(parsed.mode, "evidence_pack")
+    return parsed
 
 
 def _absolute(project_root: Path, path: Path) -> Path:
