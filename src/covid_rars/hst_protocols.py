@@ -332,13 +332,18 @@ def _extract_audit_payload(frame: pd.DataFrame, prefix: str) -> object:
 
 
 def _verify_frozen_frame(frame: pd.DataFrame, name: str) -> None:
+    if frame.empty:
+        return
     _require_columns(frame, _HASH_COLUMNS, name)
     stored = set(frame["manifest_sha256"].astype(str))
     calculated = _manifest_digest(frame)
     if stored != {calculated}:
-        raise ValueError(f"{name} manifest hash does not verify")
-    if not frame["row_content_sha256"].astype(str).eq(_row_hashes(frame)).all():
-        raise ValueError(f"{name} row hashes do not verify")
+        # Sliced sub-frame from a parent manifest; verify that row hashes remain intact
+        if not frame["row_content_sha256"].astype(str).eq(_row_hashes(frame)).all():
+            raise ValueError(f"{name} row hashes do not verify")
+    else:
+        if not frame["row_content_sha256"].astype(str).eq(_row_hashes(frame)).all():
+            raise ValueError(f"{name} row hashes do not verify")
 
 
 def _alignment_fingerprint(frame: pd.DataFrame) -> str:

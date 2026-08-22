@@ -1317,6 +1317,7 @@ def _manifests(pipeline: HSTPipeline, _stage: str) -> Mapping[str, object]:
         ].copy()
         if external_source.empty:
             raise ValueError("External transfer requires frozen Track-A cough rows")
+        external_source = _finalize_manifest(_without_hash_columns(external_source))
         external = build_external_hst_manifest(
             cache,
             external_source,
