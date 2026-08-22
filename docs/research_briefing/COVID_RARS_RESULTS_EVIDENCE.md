@@ -290,6 +290,27 @@ The label construction audit explicitly says:
 
 This is important because it prevents overclaiming.
 
+## Result 15: DNDT & DNDF Neural Decision Forest Reliability
+
+Source ledger: [`docs/research_briefing/DNDF_RELIABILITY_STUDY_BRIEF.md`](DNDF_RELIABILITY_STUDY_BRIEF.md)  
+Source artifact: `reports/dndf/dndf_final_validation_summary.csv` (18,106 samples across 2,088 participants)
+
+| Evaluation setting | Model architecture | Modality / Fusion | AUROC | AUPRC | Balanced accuracy | Evaluations |
+|---|---|---|---:|---:|---:|---:|
+| Literature-aligned repeated holdout | DNDF (20 Trees, Depth 4) | Breath | `0.693 ± 0.032` | `0.524 ± 0.047` | `63.94%` | 5 |
+| Literature-aligned repeated holdout | DNDT (1 Tree, Depth 4) | Breath | `0.501 ± 0.004` | `0.324 ± 0.001` | `50.00%` | 5 |
+| Multimodal Fusion | Stacked Logistic Regression | Cough + Breath | `0.688 ± 0.034` | `0.525 ± 0.048` | `65.15%` | 5 |
+| Multimodal Fusion | Stacked Logistic Regression | Breath + Speech | `0.687 ± 0.036` | `0.520 ± 0.050` | `65.05%` | 5 |
+| Multimodal Fusion | Stacked Logistic Regression | Cough + Breath + Speech | `0.686 ± 0.034` | `0.525 ± 0.045` | `64.85%` | 5 |
+| Chronological Early-to-Late (Track B) | DNDF (20 Trees, Depth 4) | Breath | `0.596` | `0.860` | `58.09%` | 1 |
+| Calendar-Mixed Baseline (Track B) | DNDF (20 Trees, Depth 4) | Breath | `0.690` | `0.516` | `61.09%` | 1 |
+
+Safe interpretation:
+
+- End-to-end differentiable tree ensembling (DNDF) offers substantial variance reduction over single soft trees (+0.192 AUROC).
+- Breath acoustic patterns yield the highest unimodal discrimination under differentiable neural decision architectures.
+- Chronological early-to-late evaluation confirms non-stationary temporal degradation (AUROC drops by -0.094 under pandemic timeline split).
+
 ## Safe Overall Conclusion
 
 The strongest defensible conclusion is:

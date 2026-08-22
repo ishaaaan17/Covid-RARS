@@ -28,6 +28,9 @@ Those numbers are usually reported under internal validation protocols. Our prim
 | CNN-BiGRU COUGHVID external | `0.548` AUROC | Shows neural spectrogram model also weak |
 | Metadata-only full safe metadata | `0.964` AUROC | Shortcut/confounding evidence |
 | Symptoms-only metadata | `0.932` AUROC | Important comparison to symptom-checker literature |
+| DNDF Differentiable Forest (Breath) | `0.693` AUROC | Peak differentiable tabular tree ensemble |
+| DNDF Multimodal Stacked Fusion (Cough+Breath) | `0.688` AUROC | Peak balanced accuracy ($65.15\%$) for differentiable tree fusion |
+| DNDF Temporal Early-to-Late Drift | `0.596` AUROC | Confirms temporal degradation on differentiable tree models |
 
 ## Fair Comparison Types
 

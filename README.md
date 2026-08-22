@@ -19,7 +19,10 @@ The validation-selected equal-weight multimodal Coswara setting reaches `0.895` 
 |---|---:|---|
 | Existing participant split | `0.895` AUROC, `0.862` AUPRC | Validation-selected equal-weight cough--speech fusion |
 | Time-stratified participant split | `0.849` AUROC, `0.783` AUPRC | Lower under time-aware validation |
+| DNDF Differentiable Decision Forest (Breath) | `0.693` AUROC, `0.524` AUPRC | Unimodal differentiable neural tree ensemble ($63.94\%$ Balanced Acc) |
+| DNDF Multimodal Stacked Fusion (Cough+Breath) | `0.688` AUROC, `0.525` AUPRC | Highest multimodal balanced accuracy ($65.15\%$) |
 | Early-to-late temporal split | about `0.698` AUROC | Calendar drift damages reliability |
+| DNDF Early-to-late temporal split | `0.596` AUROC | Differentiable tree drift ($\Delta = -0.094$) |
 | COUGHVID external cough transfer, classical acoustic models | `0.523-0.543` AUROC | Weak external discrimination |
 | COUGHVID external cough transfer, WavLM transformer | `0.484` AUROC | Transformer representation did not rescue transfer |
 | COUGHVID external cough transfer, CNN-BiGRU | `0.548` AUROC | Weak external discrimination in the deep spectrogram branch |
@@ -27,7 +30,7 @@ The validation-selected equal-weight multimodal Coswara setting reaches `0.895` 
 | Symptoms-only metadata model | `0.932` AUROC | Symptoms alone are a strong shortcut predictor |
 | Early/late acoustic feature-selection overlap | `0.074` Jaccard | Selected acoustic features are non-stationary |
 
-Source ledger: [`docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md`](docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md)
+Source ledgers: [`docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md`](docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md) | [`docs/research_briefing/DNDF_RELIABILITY_STUDY_BRIEF.md`](docs/research_briefing/DNDF_RELIABILITY_STUDY_BRIEF.md)
 
 ## Contribution
 
@@ -81,16 +84,18 @@ For a reviewer, collaborator, or manuscript writer, start here:
 
 1. [`docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md`](docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md)
 2. [`docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md`](docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md)
-3. [`docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md`](docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md)
-4. [`docs/research_briefing/COVID_RARS_RESULTS_COMPARISON.md`](docs/research_briefing/COVID_RARS_RESULTS_COMPARISON.md)
-5. [`references/verified_source_registry.md`](references/verified_source_registry.md)
-6. [`ARTIFACT.md`](ARTIFACT.md)
+3. [`docs/research_briefing/DNDF_RELIABILITY_STUDY_BRIEF.md`](docs/research_briefing/DNDF_RELIABILITY_STUDY_BRIEF.md)
+4. [`docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md`](docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md)
+5. [`docs/research_briefing/COVID_RARS_RESULTS_COMPARISON.md`](docs/research_briefing/COVID_RARS_RESULTS_COMPARISON.md)
+6. [`references/verified_source_registry.md`](references/verified_source_registry.md)
+7. [`ARTIFACT.md`](ARTIFACT.md)
 
 ## Main Evidence Files
 
 | Question | File to inspect |
 |---|---|
 | What are the final validation-ladder numbers? | [`docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md`](docs/research_briefing/COVID_RARS_RESULTS_EVIDENCE.md) |
+| What are the DNDT / DNDF neural forest benchmark results? | [`docs/research_briefing/DNDF_RELIABILITY_STUDY_BRIEF.md`](docs/research_briefing/DNDF_RELIABILITY_STUDY_BRIEF.md) |
 | What explains the complete project first? | [`docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md`](docs/research_briefing/COVID_RARS_E2E_PROJECT_BRIEF.md) |
 | How should results be explained in simple language? | [`docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md`](docs/research_briefing/COVID_RARS_PLAIN_LANGUAGE_EXPLANATION_GUIDE.md) |
 | Where are source and claim checks documented? | [`references/verified_source_registry.md`](references/verified_source_registry.md) |
