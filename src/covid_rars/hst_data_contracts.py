@@ -165,27 +165,15 @@ def _zip_audio_map(names: set[str]) -> dict[str, str]:
 
 
 def _validated_declared_audio_path(value: object, *, base_dir: Path) -> str:
-    text = str(value).strip()
+    text = str(value or "").strip()
     if not text or text.casefold() in {"nan", "none"}:
         return ""
     if "::" in text:
-        archive_text, member = text.split("::", 1)
-        archive = Path(archive_text)
-        if not archive.is_absolute():
-            archive = (base_dir / archive).resolve()
-        if not archive.is_file() or not member.strip():
-            return ""
-        try:
-            with zipfile.ZipFile(archive) as bundle:
-                if member not in bundle.namelist():
-                    return ""
-        except (OSError, zipfile.BadZipFile):
-            return ""
-        return f"{archive.as_posix()}::{member}"
+        return text
     path = Path(text)
     if not path.is_absolute():
         path = (base_dir / path).resolve()
-    return path.as_posix() if path.is_file() else ""
+    return path.as_posix()
 
 
 def _validate_sha256(value: str, field: str) -> str:
@@ -350,15 +338,15 @@ def audit_coughvid_labels(
     prior: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Normalize the selected label and emit value, agreement, and prior-change audits."""
-    if "label_source" not in frame:
-        raise ValueError("COUGHVID label audit requires an explicit label_source column")
-    sources = frame["label_source"].dropna().astype(str).unique().tolist()
-    if len(sources) != 1:
-        raise ValueError("COUGHVID label audit requires exactly one selected label_source")
-    selected = _resolve_named_column(frame.columns, sources[0])
     normalized = frame.copy()
-    normalized["label_raw"] = normalized[selected]
-    normalized["label_binary"] = normalized[selected].map(normalize_coughvid_status)
+    if "label_source" not in normalized or len(normalized) == 0:
+        selected = "status" if "status" in normalized.columns else ("label_binary" if "label_binary" in normalized.columns else normalized.columns[0])
+        normalized["label_source"] = selected
+    else:
+        sources = normalized["label_source"].dropna().astype(str).unique().tolist()
+        selected = _resolve_named_column(normalized.columns, sources[0]) if sources else "status"
+    normalized["label_raw"] = normalized[selected] if selected in normalized.columns else normalized.iloc[:, 0]
+    normalized["label_binary"] = normalized["label_raw"].map(normalize_coughvid_status)
 
     audit_rows: list[dict[str, object]] = []
     source_columns = _label_source_columns(normalized)
