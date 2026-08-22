@@ -1341,6 +1341,10 @@ def _verify_temporal_recording_boundaries(
             recordings["split"].eq(boundary["left_split"]),
             "_recording_timestamp_utc",
         ].max()
+        right_min = recordings.loc[
+            recordings["split"].eq(boundary["right_split"]),
+            "_recording_timestamp_utc",
+        ].min()
         if pd.isna(left_max):
             left_max = pd.Timestamp("2020-01-01", tz="UTC")
         if pd.isna(right_min):
