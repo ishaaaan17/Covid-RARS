@@ -176,8 +176,9 @@ def run_track_b_temporal_contrast(
     # 1. Chronological early-to-late
     try:
         chron_features = features_clean.copy()
-        chron_splits = build_temporal_split_assignments(chron_features)
-        chron_features["split"] = chron_features["participant_id"].map(chron_splits["participant_id_to_split"])
+        chron_assignments, _ = build_temporal_split_assignments(chron_features)
+        split_map = chron_assignments.set_index("participant_id")["temporal_split"].to_dict()
+        chron_features["split"] = chron_features["participant_id"].map(split_map)
         chron_features = chron_features.dropna(subset=["split"]).copy()
 
         m_chron, p_chron, _ = train_dndf_modality_models(
@@ -210,8 +211,9 @@ def run_track_b_temporal_contrast(
     # 2. Time-stratified / Calendar-mixed baseline
     try:
         cal_features = features_clean.copy()
-        cal_splits = build_time_stratified_split_assignments(cal_features)
-        cal_features["split"] = cal_features["participant_id"].map(cal_splits["participant_id_to_split"])
+        cal_assignments, _ = build_time_stratified_split_assignments(cal_features)
+        cal_split_map = cal_assignments.set_index("participant_id")["time_stratified_split"].to_dict()
+        cal_features["split"] = cal_features["participant_id"].map(cal_split_map)
         cal_features = cal_features.dropna(subset=["split"]).copy()
 
         m_cal, p_cal, _ = train_dndf_modality_models(
