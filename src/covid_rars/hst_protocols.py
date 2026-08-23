@@ -2164,6 +2164,7 @@ def build_external_hst_manifest(
     _validate_qualified_keys(source_manifest)
     if source_manifest.empty:
         raise ValueError("source_manifest is empty")
+    source_manifest = _finalize_manifest(_without_hash_columns(source_manifest))
     science = _resolve_scientific_fingerprint(
         scientific_config, scientific_fingerprint
     )
