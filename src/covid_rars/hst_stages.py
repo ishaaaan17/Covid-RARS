@@ -2676,6 +2676,20 @@ def _execute_training_job(
                 "outputs": _output_records(durable, root=stage_root),
             },
         )
+        try:
+            drive_backup = Path("/content/drive/MyDrive/Covid-RARS_Runs")
+            if Path("/content/drive/MyDrive").exists():
+                import shutil
+                target_job_dir = drive_backup / pipeline.run_id / "scientific" / str(job["stage"]) / "jobs" / str(job["job_id"])
+                target_job_dir.mkdir(parents=True, exist_ok=True)
+                for f in job_root.rglob("*"):
+                    if f.is_file():
+                        rel = f.relative_to(job_root)
+                        dest = target_job_dir / rel
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(f, dest)
+        except Exception:
+            pass
         return {
             "participant_predictions": participant_predictions,
             "metrics": metrics,
