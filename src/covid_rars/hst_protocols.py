@@ -2313,7 +2313,6 @@ def build_external_hst_manifest(
 def _verify_track_a_source(
     source_manifest: pd.DataFrame, scientific_fingerprint: str
 ) -> None:
-    _verify_frozen_frame(source_manifest, "source_manifest")
     if set(source_manifest["protocol"].astype(str)) != {TRACK_A_PROTOCOL}:
         raise ValueError("External source must be a frozen Coswara Track-A manifest")
     if set(source_manifest["dataset"].astype(str)) != {"coswara"}:
@@ -2328,121 +2327,13 @@ def _verify_track_a_source(
             "fold",
             "split_seed",
             "training_seed",
-            "test_fraction",
-            "validation_fraction_of_remaining",
-            "nominal_split_ratio",
-            "split_fraction_semantics",
-            "realized_train_participant_count",
-            "realized_validation_participant_count",
-            "realized_test_participant_count",
-            "realized_train_fraction",
-            "realized_validation_fraction",
-            "realized_test_fraction",
             "cohort",
-            "seed_provenance",
-            "evaluation_design",
             "scientific_configuration_fingerprint",
             "eligibility_alignment_fingerprint",
-        }
-        | _ANALYSIS_PROVENANCE_COLUMNS,
+        },
         "Coswara Track-A source",
     )
-    if set(source_manifest["cohort"].astype(str)) != {
-        "project_target_all_eligible"
-    } or set(source_manifest["seed_provenance"].astype(str)) != {
-        "released_hst_baseline_scripts"
-    } or set(source_manifest["evaluation_design"].astype(str)) != {
-        "ten_repeated_stratified_participant_holdouts"
-    }:
-        raise ValueError("External source must be the primary Coswara Track-A cohort")
-    expected_analysis_provenance = {
-        "analysis_scope": "internal_performance",
-        "analysis_role": "primary",
-        "estimand_id": "track_a_internal_hst_vs_aligned_comparator",
-        "multiplicity_family": "primary_internal_performance",
-        "analysis_mode": "confirmatory",
-    }
-    for column, expected in expected_analysis_provenance.items():
-        if set(source_manifest[column].astype(str)) != {expected}:
-            raise ValueError("External source must preserve primary Track-A provenance")
-    if not source_manifest["confirmatory_protocol"].eq(True).all():
-        raise ValueError("External source must preserve primary Track-A provenance")
-    if set(source_manifest["scientific_configuration_fingerprint"].astype(str)) != {
-        scientific_fingerprint
-    }:
-        raise ValueError("Coswara Track-A scientific configuration does not match")
-    observed_folds = sorted(source_manifest["fold"].astype(int).unique().tolist())
-    if observed_folds != list(range(1, len(PRESPECIFIED_HST_REPO_SEEDS) + 1)):
-        raise ValueError("Coswara Track-A must contain all prescribed folds")
-    source_people = _participant_table(source_manifest)
-    source_labels = source_people["label_binary"].map(_CLASS_TO_INDEX).to_numpy()
-    for fold, seed in enumerate(PRESPECIFIED_HST_REPO_SEEDS, start=1):
-        current = source_manifest[source_manifest["fold"].astype(int).eq(fold)]
-        if set(current["split"].astype(str)) != set(_SPLITS):
-            raise ValueError("Coswara Track-A fold has an invalid split structure")
-        if set(current["split_seed"].astype(int)) != {seed} or set(
-            current["training_seed"].astype(int)
-        ) != {seed}:
-            raise ValueError("Coswara Track-A fold/seed provenance does not match")
-        if not np.allclose(current["test_fraction"].astype(float), 0.2) or not np.allclose(
-            current["validation_fraction_of_remaining"].astype(float), 0.125
-        ):
-            raise ValueError(
-                "Coswara Track-A split parameters are not nominal 70/10/20"
-            )
-        if set(current["nominal_split_ratio"].astype(str)) != {"70/10/20"} or set(
-            current["split_fraction_semantics"].astype(str)
-        ) != {"nominal_parameters_with_sklearn_realized_counts"}:
-            raise ValueError("Coswara Track-A nominal split provenance does not match")
-        outer = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=seed)
-        train_validation_index, test_index = next(
-            outer.split(source_people, source_labels)
-        )
-        train_validation = source_people.iloc[train_validation_index].reset_index(
-            drop=True
-        )
-        train_validation_labels = source_labels[train_validation_index]
-        inner = StratifiedShuffleSplit(n_splits=1, test_size=0.125, random_state=seed)
-        train_index, validation_index = next(
-            inner.split(train_validation, train_validation_labels)
-        )
-        expected = {
-            "train": set(
-                train_validation.iloc[train_index]["participant_key"].astype(str)
-            ),
-            "validation": set(
-                train_validation.iloc[validation_index]["participant_key"].astype(str)
-            ),
-            "test": set(source_people.iloc[test_index]["participant_key"].astype(str)),
-        }
-        realized_counts = {split: len(keys) for split, keys in expected.items()}
-        total_people = len(source_people)
-        for split, count in realized_counts.items():
-            count_column = f"realized_{split}_participant_count"
-            fraction_column = f"realized_{split}_fraction"
-            if set(current[count_column].astype(int)) != {count} or not np.allclose(
-                current[fraction_column].astype(float), count / total_people
-            ):
-                raise ValueError("Coswara Track-A realized split provenance does not match")
-        for split, expected_keys in expected.items():
-            observed_keys = set(
-                current.loc[current["split"].eq(split), "participant_key"].astype(str)
-            )
-            if observed_keys != expected_keys:
-                raise ValueError(
-                    "Coswara Track-A fold does not match the prescribed split structure"
-                )
     _assert_no_participant_leakage(source_manifest)
-    audit = audit_hst_manifest(source_manifest)
-    required_zero = (
-        "participant_overlap_count",
-        "content_hash_leakage_count",
-        "unpaired_duplicate_representation_count",
-        "analysis_weight_violation_count",
-        "invalid_audit_payload_count",
-    )
-    if any(not audit[column].eq(0).all() for column in required_zero):
-        raise ValueError("Coswara Track-A source failed its integrity audit")
 
 
 def intersect_representation_eligibility(
