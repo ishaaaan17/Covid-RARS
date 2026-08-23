@@ -382,6 +382,29 @@ def main() -> None:
                         run_id=pipeline.run_id,
                     )
                 )
+            try:
+                drive_backup = Path("/content/drive/MyDrive/Covid-RARS_Runs")
+                if drive_backup.exists():
+                    run_dirs = [d for d in drive_backup.iterdir() if d.is_dir()]
+                    if run_dirs:
+                        matching_dirs = [d for d in run_dirs if d.name == pipeline.run_id]
+                        chosen_dir = matching_dirs[0] if matching_dirs else sorted(run_dirs, key=lambda d: d.stat().st_mtime, reverse=True)[0]
+                        print(f"📦 [Auto-Resume] Restoring verified progress from Drive ({chosen_dir.name})...", flush=True)
+                        import shutil
+                        for sub in ("runtime", "manifests", "contracts", "audits", "scientific"):
+                            src_sub = chosen_dir / sub
+                            dest_sub = pipeline.run_root / sub
+                            if src_sub.exists():
+                                for f in src_sub.rglob("*"):
+                                    if f.is_file():
+                                        rel = f.relative_to(src_sub)
+                                        out = dest_sub / rel
+                                        out.parent.mkdir(parents=True, exist_ok=True)
+                                        if not out.exists():
+                                            shutil.copy2(f, out)
+            except Exception as e:
+                print(f"ℹ️ Auto-resume notice: {e}", flush=True)
+
             summary = pipeline.run(
                 through=args.through,
                 force=set(args.force_stage),

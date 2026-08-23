@@ -784,6 +784,21 @@ class HSTPipeline:
             }
             receipt["record_hash"] = canonical_json_sha256(receipt)
             atomic_write_json(receipt_path, receipt)
+            try:
+                drive_backup = Path("/content/drive/MyDrive/Covid-RARS_Runs")
+                if Path("/content/drive/MyDrive").exists():
+                    drive_target = drive_backup / self.run_id / "runtime" / "stages" / receipt_path.name
+                    drive_target.parent.mkdir(parents=True, exist_ok=True)
+                    import shutil
+                    shutil.copy2(receipt_path, drive_target)
+                    for out_p in output_paths:
+                        p_obj = Path(out_p)
+                        if p_obj.is_file() and p_obj.is_relative_to(self.run_root):
+                            out_target = drive_backup / self.run_id / p_obj.relative_to(self.run_root)
+                            out_target.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copy2(p_obj, out_target)
+            except Exception:
+                pass
             return receipt
         except Exception as exc:
             if memory_measurement_active:
