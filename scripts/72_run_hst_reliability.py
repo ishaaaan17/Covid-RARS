@@ -186,12 +186,54 @@ def ensure_approved_accepted_freezes(project_root: Path, accepted_path: Path) ->
     print(f"🔒 Promoted approved freeze hashes to {accepted_path}", flush=True)
 
 
+def ensure_data_inputs(project_root: Path) -> None:
+    data_dir = project_root / "data"
+    processed_dir = data_dir / "processed"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    target_metadata = processed_dir / "metadata_with_quality.csv"
+    if target_metadata.is_file():
+        return
+
+    candidate_roots = [
+        Path("/content/drive/MyDrive/Covid-RARS/data"),
+        Path("/content/drive/MyDrive/COVID_RARS_DATA"),
+        Path("/content/drive/MyDrive/data"),
+        Path("/content/drive/MyDrive/processed"),
+        Path("/content/drive/MyDrive/Covid-RARS"),
+        Path("/content/drive/MyDrive"),
+        Path("/content/data"),
+    ]
+    for root in candidate_roots:
+        if not root.exists():
+            continue
+        for meta in root.glob("**/metadata_with_quality.csv"):
+            if meta.is_file():
+                src_data = meta.parent.parent if meta.parent.name == "processed" else meta.parent
+                print(f"📦 [Auto-Data] Discovered datasets at {src_data}, linking to {data_dir}...", flush=True)
+                for item in src_data.glob("*"):
+                    dest = data_dir / item.name
+                    if not dest.exists():
+                        try:
+                            dest.symlink_to(item)
+                        except Exception:
+                            try:
+                                import shutil
+                                shutil.copytree(item, dest) if item.is_dir() else shutil.copy2(item, dest)
+                            except Exception:
+                                pass
+                break
+        if target_metadata.is_file():
+            break
+
+
 def main() -> None:
     args = parse_args()
     os.environ.update(hst_process_environment(device=args.device))
     project_root = args.project_root.resolve()
     config_path = _absolute(project_root, args.config)
     accepted_path = _absolute(project_root, args.accepted_freezes)
+
+    ensure_data_inputs(project_root)
 
     if args.mode == "full":
         ensure_approved_accepted_freezes(project_root, accepted_path)
