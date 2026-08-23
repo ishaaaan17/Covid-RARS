@@ -136,11 +136,14 @@ def _section(config: HSTPipelineConfig, name: str) -> Mapping[str, object]:
 
 
 def _project_path(config: HSTPipelineConfig, supplied: object) -> Path:
-    path = (config.workspace_root / str(supplied)).resolve()
+    direct = config.workspace_root / str(supplied)
+    if direct.is_file() or direct.is_dir():
+        return direct
+    path = direct.resolve()
     try:
-        path.relative_to(config.workspace_root)
-    except ValueError as exc:
-        raise ValueError(f"Configured project path escapes project root: {supplied}") from exc
+        path.relative_to(config.workspace_root.resolve())
+    except ValueError:
+        pass
     return path
 
 

@@ -191,7 +191,7 @@ def ensure_data_inputs(project_root: Path) -> None:
     processed_dir = data_dir / "processed"
     raw_dir = data_dir / "raw"
     target_metadata = processed_dir / "metadata_with_quality.csv"
-    if target_metadata.is_file():
+    if target_metadata.is_file() and not target_metadata.is_symlink():
         return
 
     candidate_roots = [
@@ -211,20 +211,22 @@ def ensure_data_inputs(project_root: Path) -> None:
             if meta.is_file():
                 src_processed = meta.parent
                 src_data = src_processed.parent if src_processed.name == "processed" else src_processed
-                print(f"📦 [Auto-Data] Linking dataset files from {src_data} to {data_dir}...", flush=True)
+                print(f"📦 [Auto-Data] Copying dataset files from {src_data} to {data_dir}...", flush=True)
 
                 processed_dir.mkdir(parents=True, exist_ok=True)
+                import shutil
                 for item in src_processed.glob("*"):
                     dest = processed_dir / item.name
+                    if dest.is_symlink():
+                        try:
+                            dest.unlink()
+                        except Exception:
+                            pass
                     if not dest.exists():
                         try:
-                            dest.symlink_to(item)
+                            shutil.copytree(item, dest) if item.is_dir() else shutil.copy2(item, dest)
                         except Exception:
-                            try:
-                                import shutil
-                                shutil.copytree(item, dest) if item.is_dir() else shutil.copy2(item, dest)
-                            except Exception:
-                                pass
+                            pass
 
                 if (src_data / "raw").exists():
                     raw_dir.mkdir(parents=True, exist_ok=True)
@@ -233,17 +235,18 @@ def ensure_data_inputs(project_root: Path) -> None:
                             rel = item.relative_to(src_data / "raw")
                             dest = raw_dir / rel
                             dest.parent.mkdir(parents=True, exist_ok=True)
+                            if dest.is_symlink():
+                                try:
+                                    dest.unlink()
+                                except Exception:
+                                    pass
                             if not dest.exists():
                                 try:
-                                    dest.symlink_to(item)
+                                    shutil.copy2(item, dest)
                                 except Exception:
-                                    try:
-                                        import shutil
-                                        shutil.copy2(item, dest)
-                                    except Exception:
-                                        pass
+                                    pass
                 break
-        if target_metadata.is_file():
+        if target_metadata.is_file() and not target_metadata.is_symlink():
             break
 
 
