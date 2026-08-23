@@ -68,6 +68,8 @@ def train_dndf_modality_models(
     use_smote: bool = True,
     feature_selection: str = "f_classif",
     n_selected_features: int = 80,
+    tune_hyperparameters: bool = False,
+    optuna_trials: int = 25,
     random_state: int = 42,
     device: str = "auto",
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -107,24 +109,57 @@ def train_dndf_modality_models(
         X_test = test_data[feat_cols].to_numpy(dtype=np.float32) if not test_data.empty else None
         y_test = labels_to_binary(test_data["label_binary"]) if not test_data.empty else None
 
+        # Optional Bayesian Hyperparameter Optimization for this modality
+        tuned_params: dict[str, Any] = {}
+        if tune_hyperparameters and X_val is not None and len(np.unique(y_train)) > 1:
+            try:
+                from covid_rars.dndf_tuning import optimize_dndf_hyperparameters
+                print(f"\n  >> 🔍 Running Optuna Bayesian Hyperparameter Optimization for [{modality.upper()}] ({optuna_trials} trials)...")
+                tune_res = optimize_dndf_hyperparameters(
+                    X_train=X_train,
+                    y_train=y_train,
+                    X_val=X_val,
+                    y_val=y_val,
+                    n_trials=optuna_trials,
+                    metric="auroc",
+                    device=device,
+                    random_state=random_state,
+                )
+                tuned_params = tune_res.get("best_params", {})
+                print(f"  >> 🏆 Best parameters found for [{modality.upper()}]: {tuned_params}")
+            except Exception as e:
+                logger.warning(f"Optuna hyperparameter tuning failed: {e}. Falling back to default parameters.")
+
         for m_type in model_types:
-            model_name = f"{m_type}_depth{depth}"
+            m_num_trees = tuned_params.get("num_trees", num_trees) if m_type == "dndf" else 1
+            m_depth = tuned_params.get("depth", depth)
+            m_used_feat = tuned_params.get("used_features_rate", used_features_rate)
+            m_temp = tuned_params.get("temperature", 1.0)
+            m_lr = tuned_params.get("learning_rate", learning_rate)
+            m_wd = tuned_params.get("weight_decay", weight_decay)
+            m_bs = tuned_params.get("batch_size", batch_size)
+            m_n_sel = tuned_params.get("n_selected_features", n_selected_features)
+
+            model_name = f"{m_type}_depth{m_depth}"
             if m_type == "dndf":
-                model_name = f"dndf_trees{num_trees}_depth{depth}"
+                model_name = f"dndf_trees{m_num_trees}_depth{m_depth}"
+                if tuned_params:
+                    model_name += "_optuna_tuned"
 
             clf = DNDFClassifier(
                 model_type=m_type,
-                num_trees=num_trees,
-                depth=depth,
-                used_features_rate=used_features_rate,
-                learning_rate=learning_rate,
-                weight_decay=weight_decay,
-                batch_size=batch_size,
+                num_trees=m_num_trees,
+                depth=m_depth,
+                used_features_rate=m_used_feat,
+                temperature=m_temp,
+                learning_rate=m_lr,
+                weight_decay=m_wd,
+                batch_size=m_bs,
                 max_epochs=max_epochs,
                 patience=patience,
                 use_smote=use_smote,
                 feature_selection=feature_selection,
-                n_selected_features=n_selected_features,
+                n_selected_features=m_n_sel,
                 device=device,
                 random_state=random_state,
             )

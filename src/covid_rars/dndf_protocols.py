@@ -47,6 +47,8 @@ def run_track_a_repeated_holdouts(
     max_epochs: int = 50,
     patience: int = 10,
     use_smote: bool = True,
+    tune_hyperparameters: bool = False,
+    optuna_trials: int = 25,
     device: str = "auto",
 ) -> DNDFProtocolResult:
     """Run Track A: 10 repeated stratified participant-level holdouts (approx 70/10/20 train/val/test)."""
@@ -103,6 +105,8 @@ def run_track_a_repeated_holdouts(
             max_epochs=max_epochs,
             patience=patience,
             use_smote=use_smote,
+            tune_hyperparameters=tune_hyperparameters,
+            optuna_trials=optuna_trials,
             random_state=seed,
             device=device,
         )

@@ -53,6 +53,8 @@ def run_dndf_reliability_pipeline(
     max_epochs: int = 50,
     patience: int = 10,
     use_smote: bool = True,
+    tune_hyperparameters: bool = False,
+    optuna_trials: int = 25,
     device: str = "auto",
     output_dir: Path | str | None = None,
 ) -> DNDFPipelineArtifacts:
@@ -76,6 +78,8 @@ def run_dndf_reliability_pipeline(
         max_epochs=max_epochs,
         patience=patience,
         use_smote=use_smote,
+        tune_hyperparameters=tune_hyperparameters,
+        optuna_trials=optuna_trials,
         device=device,
     )
 
