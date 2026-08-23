@@ -422,6 +422,8 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
             mean_train_loss = epoch_loss / max(1, total_samples)
             epoch_record = {"epoch": epoch + 1, "train_loss": mean_train_loss}
 
+            current_lr = scheduler.get_last_lr()[0] if hasattr(scheduler, "get_last_lr") else self.learning_rate
+
             if has_val:
                 self.model_.eval()
                 with torch.no_grad():
@@ -434,19 +436,32 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
                     ).item()
 
                 epoch_record["val_loss"] = val_loss
-                if (epoch + 1) % 10 == 0 or epoch == self.max_epochs - 1:
-                    print(f"    Epoch {epoch+1:02d}/{self.max_epochs:02d} - Train Loss: {mean_train_loss:.4f} | Val Loss: {val_loss:.4f}")
+                
+                # Check for improvement
                 if val_loss < best_loss:
                     best_loss = val_loss
                     best_state = {k: v.cpu().clone() for k, v in self.model_.state_dict().items()}
                     patience_count = 0
+                    improved_tag = " ⭐ [Best]"
                 else:
                     patience_count += 1
-                    if patience_count >= self.patience:
-                        break
+                    improved_tag = f" (Patience: {patience_count}/{self.patience})"
+
+                if (epoch + 1) % 5 == 0 or epoch == 0 or epoch == self.max_epochs - 1 or is_best:
+                    try:
+                        from sklearn.metrics import roc_auc_score
+                        v_auroc = roc_auc_score(y_val_arr, val_probs[:, 1].cpu().numpy())
+                        auroc_str = f" | Val AUROC: {v_auroc:.4f}"
+                    except Exception:
+                        auroc_str = ""
+                    print(f"    Epoch {epoch+1:02d}/{self.max_epochs:02d} | Train Loss: {mean_train_loss:.4f} | Val Loss: {val_loss:.4f}{auroc_str} | LR: {current_lr:.5f}{improved_tag}")
+
+                if patience_count >= self.patience:
+                    print(f"    ⏹️  Early stopping triggered at Epoch {epoch+1} (Best Val Loss: {best_loss:.4f})")
+                    break
             else:
-                if (epoch + 1) % 10 == 0 or epoch == self.max_epochs - 1:
-                    print(f"    Epoch {epoch+1:02d}/{self.max_epochs:02d} - Train Loss: {mean_train_loss:.4f}")
+                if (epoch + 1) % 5 == 0 or epoch == 0 or epoch == self.max_epochs - 1:
+                    print(f"    Epoch {epoch+1:02d}/{self.max_epochs:02d} | Train Loss: {mean_train_loss:.4f} | LR: {current_lr:.5f}")
 
             self.train_history_.append(epoch_record)
 
@@ -464,6 +479,7 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
         else:
             self.best_threshold_ = self.threshold
 
+        print(f"    ✓ Model converged. Best Val Loss: {best_loss:.4f} | Optimal Decision Threshold: {self.best_threshold_:.3f}")
         return self
 
     def predict_proba(self, X: np.ndarray | Sequence[Sequence[float]]) -> np.ndarray:

@@ -214,9 +214,17 @@ def train_dndf_modality_models(
                     **m_bundle,
                 })
 
+            # Print formatted evaluation summary across splits
+            print(f"\n  📊 Results for [{model_name}] on [{modality.upper()}]:")
+            for split_name in ["train", "val", "test"]:
+                m_match = [r for r in metrics_rows if r["modality"] == modality and r["model_name"] == model_name and r["split"] == split_name]
+                if m_match:
+                    m = m_match[-1]
+                    print(f"     • {split_name.upper():<5s} (N={m['n_participants']:4d}) -> AUROC: {m['auroc']:.4f} | AUPRC: {m['auprc']:.4f} | Balanced Acc: {m['balanced_accuracy']*100:.1f}% | Sens: {m['sensitivity']*100:.1f}% | Spec: {m['specificity']*100:.1f}%")
+
             # Selection on validation AUROC
             val_rows = [r for r in metrics_rows if r["modality"] == modality and r["model_name"] == model_name and r["split"] == "val"]
-            val_auroc = val_rows[0]["auroc"] if val_rows else 0.5
+            val_auroc = val_rows[-1]["auroc"] if val_rows else 0.5
             selection_rows.append({
                 "modality": modality,
                 "model_name": model_name,
