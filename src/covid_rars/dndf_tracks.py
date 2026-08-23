@@ -110,7 +110,7 @@ def run_track1_author_exact_reproduction(
         rec = recall_score(y_test, preds_test, zero_division=0)
         prec = precision_score(y_test, preds_test, zero_division=0)
         f1 = f1_score(y_test, preds_test, zero_division=0)
-        cm = confusion_matrix(y_test, preds_test)
+        cm = confusion_matrix(y_test, preds_test, labels=[0, 1])
         tn, fp, fn, tp = cm.ravel()
         spec = tn / (tn + fp) if (tn + fp) > 0 else 0.0
         elapsed = time.time() - f_t0
@@ -233,7 +233,7 @@ def run_track2_corrected_leak_free_reproduction(
         rec = recall_score(y_test, preds_test, zero_division=0)
         prec = precision_score(y_test, preds_test, zero_division=0)
         f1 = f1_score(y_test, preds_test, zero_division=0)
-        cm = confusion_matrix(y_test, preds_test)
+        cm = confusion_matrix(y_test, preds_test, labels=[0, 1])
         tn, fp, fn, tp = cm.ravel()
         spec = tn / (tn + fp) if (tn + fp) > 0 else 0.0
         elapsed = time.time() - f_t0

@@ -102,8 +102,10 @@ def main() -> int:
     else:
         logger.info(f"Loading features from {feat_path}...")
         if args.smoke_test:
-            # Read only 150 rows directly to keep RAM < 10MB
-            features_df = pd.read_csv(feat_path, nrows=150)
+            # Read 1500 rows to ensure balanced positive and negative classes with < 30MB RAM
+            features_df = pd.read_csv(feat_path, nrows=1500)
+            float_cols = features_df.select_dtypes(include=["float64"]).columns
+            features_df[float_cols] = features_df[float_cols].astype(np.float32)
         else:
             features_df = pd.read_csv(feat_path, low_memory=False)
             # Downcast numeric columns to float32 to reduce memory footprint by 50%
@@ -113,10 +115,13 @@ def main() -> int:
             gc.collect()
 
     if args.smoke_test and feat_path is not None:
-        # Filter small subset per modality for fast check
+        # Filter balanced positive & negative subset per modality for fast clean validation
         sub_dfs = []
         for m in args.modalities:
-            m_sub = features_df[features_df["modality"] == m].head(25)
+            m_data = features_df[features_df["modality"] == m]
+            pos = m_data[m_data["label_binary"] == "positive"].head(20)
+            neg = m_data[m_data["label_binary"] == "negative"].head(20)
+            m_sub = pd.concat([pos, neg], ignore_index=True)
             if not m_sub.empty:
                 sub_dfs.append(m_sub)
         if sub_dfs:
