@@ -13,6 +13,7 @@ from pathlib import Path
 # Add src to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+import numpy as np
 import pandas as pd
 from covid_rars.dndf_replication import run_paper_replication_benchmark
 
