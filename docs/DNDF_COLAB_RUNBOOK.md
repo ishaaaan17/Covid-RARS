@@ -22,14 +22,14 @@ If running via terminal or shell in Colab:
 pip install -r requirements.txt
 pip install -e .
 
-# 2. Run DNDF reliability study across all tracks
+# 2. Run DNDF reliability study across all tracks with optimized parameters
 python scripts/79_run_dndf_reliability.py \
     --features data/processed/features_compare_is10_top800.csv \
     --external-features data/processed/features_compare_is10_coughvid_cough_top800.csv \
-    --num-trees 20 \
-    --depth 4 \
-    --lr 0.01 \
-    --max-epochs 50 \
+    --num-trees 50 \
+    --depth 5 \
+    --lr 0.005 \
+    --max-epochs 60 \
     --device auto \
     --output-dir reports/dndf
 
@@ -49,23 +49,25 @@ Modify hyperparameters in [`configs/dndf_reliability.json`](../configs/dndf_reli
 {
   "architecture": {
     "dndt": {
-      "depth": 4,
+      "depth": 5,
       "used_features_rate": 1.0,
       "temperature": 1.0
     },
     "dndf": {
-      "num_trees": 20,
-      "depth": 4,
-      "used_features_rate": 0.8,
+      "num_trees": 50,
+      "depth": 5,
+      "used_features_rate": 0.7,
       "temperature": 1.0
     }
   },
   "training": {
-    "learning_rate": 0.01,
+    "learning_rate": 0.005,
     "batch_size": 32,
-    "max_epochs": 50,
-    "patience": 10,
-    "use_smote": true
+    "max_epochs": 60,
+    "patience": 15,
+    "use_smote": true,
+    "feature_selection": "f_classif",
+    "n_selected_features": 80
   }
 }
 ```

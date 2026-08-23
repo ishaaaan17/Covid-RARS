@@ -66,7 +66,8 @@ def train_dndf_modality_models(
     max_epochs: int = 50,
     patience: int = 10,
     use_smote: bool = True,
-    feature_selection: str = "none",
+    feature_selection: str = "f_classif",
+    n_selected_features: int = 80,
     random_state: int = 42,
     device: str = "auto",
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -123,6 +124,7 @@ def train_dndf_modality_models(
                 patience=patience,
                 use_smote=use_smote,
                 feature_selection=feature_selection,
+                n_selected_features=n_selected_features,
                 device=device,
                 random_state=random_state,
             )

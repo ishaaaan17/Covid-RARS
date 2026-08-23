@@ -9,8 +9,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.feature_selection import RFECV, SelectPercentile, f_classif
+from sklearn.feature_selection import RFECV, SelectKBest, SelectPercentile, f_classif, mutual_info_classif
 from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.preprocessing import StandardScaler
 
 
 class NeuralDecisionTree(nn.Module):
@@ -65,7 +66,8 @@ class NeuralDecisionTree(nn.Module):
 
         self.register_buffer("feature_indices", torch.tensor(chosen_indices, dtype=torch.long))
 
-        # Linear decision routing layer for all inner nodes
+        # Feature normalization and linear decision routing layer
+        self.input_norm = nn.LayerNorm(used_feature_count)
         self.decision_layer = nn.Linear(used_feature_count, self.num_inner_nodes)
 
         # Trainable leaf distribution logits [num_leaves, num_classes]
@@ -101,9 +103,10 @@ class NeuralDecisionTree(nn.Module):
         """
         # Subsample features
         x_sub = torch.index_select(x, dim=1, index=self.feature_indices)
+        x_norm = self.input_norm(x_sub)
 
         # Compute decision node routing probabilities in (0, 1)
-        decision_logits = self.decision_layer(x_sub) / self.temperature
+        decision_logits = self.decision_layer(x_norm) / self.temperature
         d_prob = torch.sigmoid(decision_logits)  # [B, num_inner_nodes]
         d_prob = torch.clamp(d_prob, min=1e-7, max=1.0 - 1e-7)
 
@@ -253,6 +256,7 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
         self.model_: nn.Module | None = None
         self.classes_: np.ndarray = np.array([0, 1])
         self.device_: torch.device = torch.device("cpu")
+        self.scaler_: StandardScaler | None = None
         self.feature_selector_: Any = None
         self.best_threshold_: float = threshold
         self.train_history_: list[dict[str, float]] = []
@@ -263,6 +267,7 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
         return torch.device(self.device)
 
     def _apply_feature_selection_train(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
+        k = self.n_selected_features or min(80, X.shape[1])
         if self.feature_selection == "rfecv_extratrees":
             estimator = ExtraTreesClassifier(
                 n_estimators=50, random_state=self.random_state, n_jobs=-1
@@ -279,9 +284,13 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
             X_sel = selector.fit_transform(X, y)
             self.feature_selector_ = selector
             return X_sel
-        elif self.feature_selection == "f_classif" and self.n_selected_features is not None:
-            pct = max(1, min(100, int(100 * self.n_selected_features / max(1, X.shape[1]))))
-            selector = SelectPercentile(score_func=f_classif, percentile=pct)
+        elif self.feature_selection in ("f_classif", "anova") and k < X.shape[1]:
+            selector = SelectKBest(score_func=f_classif, k=k)
+            X_sel = selector.fit_transform(X, y)
+            self.feature_selector_ = selector
+            return X_sel
+        elif self.feature_selection == "mutual_info" and k < X.shape[1]:
+            selector = SelectKBest(score_func=mutual_info_classif, k=k)
             X_sel = selector.fit_transform(X, y)
             self.feature_selector_ = selector
             return X_sel
@@ -309,7 +318,11 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
         X_arr = np.asarray(X, dtype=np.float32)
         y_arr = np.asarray(y, dtype=np.int64)
 
-        # Optional SMOTE oversampling on training data
+        # Standard Scaling fitted strictly on training data
+        self.scaler_ = StandardScaler()
+        X_arr = self.scaler_.fit_transform(X_arr)
+
+        # Optional SMOTE oversampling on scaled training data
         if self.use_smote and len(np.unique(y_arr)) > 1:
             try:
                 from imblearn.over_sampling import SMOTE
@@ -318,11 +331,19 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
             except Exception:
                 pass
 
-        # Optional Feature Selection
+        # Feature Selection
         X_arr = self._apply_feature_selection_train(X_arr, y_arr)
 
         num_features = X_arr.shape[1]
         num_classes = 2
+
+        # Class weights for balanced loss
+        unique_classes, counts = np.unique(y_arr, return_counts=True)
+        if len(unique_classes) == 2 and counts[0] > 0 and counts[1] > 0:
+            weights = len(y_arr) / (2.0 * counts)
+            class_weights_t = torch.tensor(weights, dtype=torch.float32, device=self.device_)
+        else:
+            class_weights_t = None
 
         # Initialize DNDT or DNDF model
         if self.model_type.lower() in ("dndt", "tree"):
@@ -350,6 +371,9 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
             lr=self.learning_rate,
             weight_decay=self.weight_decay,
         )
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=max(1, self.max_epochs), eta_min=1e-5
+        )
 
         dataset = torch.utils.data.TensorDataset(
             torch.tensor(X_arr, dtype=torch.float32),
@@ -364,7 +388,8 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
 
         has_val = X_val is not None and y_val is not None
         if has_val:
-            X_val_sel = self._apply_feature_selection_transform(np.asarray(X_val, dtype=np.float32))
+            X_val_scaled = self.scaler_.transform(np.asarray(X_val, dtype=np.float32))
+            X_val_sel = self._apply_feature_selection_transform(X_val_scaled)
             X_val_tensor = torch.tensor(X_val_sel, dtype=torch.float32, device=self.device_)
             y_val_arr = np.asarray(y_val, dtype=np.int64)
 
@@ -384,15 +409,16 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
 
                 optimizer.zero_grad()
                 probs = self.model_(batch_x)
-                # Compute Cross Entropy via NLL on log probabilities
+                # Compute Cross Entropy via NLL on log probabilities with class weighting
                 log_probs = torch.log(torch.clamp(probs, min=1e-7, max=1.0))
-                loss = F.nll_loss(log_probs, batch_y)
+                loss = F.nll_loss(log_probs, batch_y, weight=class_weights_t)
                 loss.backward()
                 optimizer.step()
 
                 epoch_loss += loss.item() * len(batch_y)
                 total_samples += len(batch_y)
 
+            scheduler.step()
             mean_train_loss = epoch_loss / max(1, total_samples)
             epoch_record = {"epoch": epoch + 1, "train_loss": mean_train_loss}
 
@@ -401,10 +427,15 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
                 with torch.no_grad():
                     val_probs = self.model_(X_val_tensor)
                     val_log_probs = torch.log(torch.clamp(val_probs, min=1e-7, max=1.0))
-                    val_loss = F.nll_loss(val_log_probs, torch.tensor(y_val_arr, device=self.device_)).item()
+                    val_loss = F.nll_loss(
+                        val_log_probs,
+                        torch.tensor(y_val_arr, device=self.device_),
+                        weight=class_weights_t,
+                    ).item()
 
                 epoch_record["val_loss"] = val_loss
-                print(f"    Epoch {epoch+1:02d}/{self.max_epochs:02d} - Train Loss: {mean_train_loss:.4f} | Val Loss: {val_loss:.4f}")
+                if (epoch + 1) % 10 == 0 or epoch == self.max_epochs - 1:
+                    print(f"    Epoch {epoch+1:02d}/{self.max_epochs:02d} - Train Loss: {mean_train_loss:.4f} | Val Loss: {val_loss:.4f}")
                 if val_loss < best_loss:
                     best_loss = val_loss
                     best_state = {k: v.cpu().clone() for k, v in self.model_.state_dict().items()}
@@ -412,10 +443,10 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
                 else:
                     patience_count += 1
                     if patience_count >= self.patience:
-                        print(f"    Early stopping triggered at epoch {epoch+1}.")
                         break
             else:
-                print(f"    Epoch {epoch+1:02d}/{self.max_epochs:02d} - Train Loss: {mean_train_loss:.4f}")
+                if (epoch + 1) % 10 == 0 or epoch == self.max_epochs - 1:
+                    print(f"    Epoch {epoch+1:02d}/{self.max_epochs:02d} - Train Loss: {mean_train_loss:.4f}")
 
             self.train_history_.append(epoch_record)
 
@@ -440,6 +471,8 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
             raise RuntimeError("Model is not fitted yet.")
         self.model_.eval()
         X_arr = np.asarray(X, dtype=np.float32)
+        if self.scaler_ is not None:
+            X_arr = self.scaler_.transform(X_arr)
         X_sel = self._apply_feature_selection_transform(X_arr)
         X_tensor = torch.tensor(X_sel, dtype=torch.float32, device=self.device_)
         with torch.no_grad():
