@@ -189,12 +189,13 @@ def ensure_approved_accepted_freezes(project_root: Path, accepted_path: Path) ->
 def ensure_data_inputs(project_root: Path) -> None:
     data_dir = project_root / "data"
     processed_dir = data_dir / "processed"
-    processed_dir.mkdir(parents=True, exist_ok=True)
+    raw_dir = data_dir / "raw"
     target_metadata = processed_dir / "metadata_with_quality.csv"
     if target_metadata.is_file():
         return
 
     candidate_roots = [
+        Path("/content/drive/MyDrive/BTP"),
         Path("/content/drive/MyDrive/Covid-RARS/data"),
         Path("/content/drive/MyDrive/COVID_RARS_DATA"),
         Path("/content/drive/MyDrive/data"),
@@ -208,10 +209,13 @@ def ensure_data_inputs(project_root: Path) -> None:
             continue
         for meta in root.glob("**/metadata_with_quality.csv"):
             if meta.is_file():
-                src_data = meta.parent.parent if meta.parent.name == "processed" else meta.parent
-                print(f"📦 [Auto-Data] Discovered datasets at {src_data}, linking to {data_dir}...", flush=True)
-                for item in src_data.glob("*"):
-                    dest = data_dir / item.name
+                src_processed = meta.parent
+                src_data = src_processed.parent if src_processed.name == "processed" else src_processed
+                print(f"📦 [Auto-Data] Linking dataset files from {src_data} to {data_dir}...", flush=True)
+
+                processed_dir.mkdir(parents=True, exist_ok=True)
+                for item in src_processed.glob("*"):
+                    dest = processed_dir / item.name
                     if not dest.exists():
                         try:
                             dest.symlink_to(item)
@@ -221,6 +225,23 @@ def ensure_data_inputs(project_root: Path) -> None:
                                 shutil.copytree(item, dest) if item.is_dir() else shutil.copy2(item, dest)
                             except Exception:
                                 pass
+
+                if (src_data / "raw").exists():
+                    raw_dir.mkdir(parents=True, exist_ok=True)
+                    for item in (src_data / "raw").glob("**/*"):
+                        if item.is_file():
+                            rel = item.relative_to(src_data / "raw")
+                            dest = raw_dir / rel
+                            dest.parent.mkdir(parents=True, exist_ok=True)
+                            if not dest.exists():
+                                try:
+                                    dest.symlink_to(item)
+                                except Exception:
+                                    try:
+                                        import shutil
+                                        shutil.copy2(item, dest)
+                                    except Exception:
+                                        pass
                 break
         if target_metadata.is_file():
             break
@@ -234,6 +255,12 @@ def main() -> None:
     accepted_path = _absolute(project_root, args.accepted_freezes)
 
     ensure_data_inputs(project_root)
+
+    try:
+        from covid_rars.hst_reliability import prepare_hst_prerequisites
+        prepare_hst_prerequisites(config_path=config_path, project_root=project_root)
+    except Exception as e:
+        print(f"ℹ️ Prerequisites notice: {e}", flush=True)
 
     if args.mode == "full":
         ensure_approved_accepted_freezes(project_root, accepted_path)
