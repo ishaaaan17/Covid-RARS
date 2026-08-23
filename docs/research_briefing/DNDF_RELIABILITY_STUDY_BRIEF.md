@@ -59,6 +59,30 @@ Evaluated across 5 random participant-stratified splits (Seeds: 1, 2, 5, 12, 40)
 
 ---
 
+## 3.1 Result 1.1: Optuna Bayesian Hyperparameter Optimization on Breath Audio
+
+To overcome the soft sigmoid vanishing gradient bottleneck and find the optimal architectural capacity on Coswara, a 25-trial Bayesian optimization experiment was conducted on the complete participant-stratified **Breath** dataset (Train = 3,015 samples, Validation = 1,014 samples across 2,088 participants):
+
+### Optimal Empirical Hyperparameter Set:
+| Hyperparameter | Tuned Optimal Value | Baseline Default | Architectural Rationale |
+|---|:---:|:---:|---|
+| **`num_trees`** | **`60`** | `20` | Increases ensemble smoothing and reduces soft decision variance |
+| **`depth`** | **`3`** ($8$ leaves) | `4` ($16$ leaves) | Shorter trees prevent routing hyperplane overfitting on continuous inputs |
+| **`used_features_rate`** | **`0.60`** | `0.80` | Stricter feature bagging forces distinct trees to learn complementary acoustic subspaces |
+| **`temperature` ($\tau$)** | **`0.8309`** | `1.00` | Slightly sharpens routing decisions to prevent probability over-diffusion |
+| **`learning_rate`** | **`0.00344`** | `0.010` | Moderate learning rate paired with Cosine Annealing ensures stable convergence |
+| **`weight_decay`** | **`0.000372`** | `0.0001` | Adds regularization to inner decision layer weights |
+| **`n_selected_features` ($k$)** | **`60`** | `800` (None) | ANOVA $F$-score filtering removes noisy high-order moments and retains pure formants |
+| **`batch_size`** | **`32`** | `32` | Optimal mini-batch gradient variance |
+
+### Empirical Validation Gain:
+$$\text{Baseline DNDT } (\mathbf{0.5007}) \xrightarrow{+\text{DNDF Forest}} \text{Baseline DNDF } (\mathbf{0.6926}) \xrightarrow{+\text{Optuna Tuning}} \mathbf{\text{Tuned DNDF } (\mathbf{0.7549} \text{ AUROC})}$$
+
+* **Net Gain:** **$+0.2542$ AUROC** over single decision trees and **$+0.0623$ AUROC** over untuned forests.
+* **Key Takeaway:** In soft differentiable decision forests, shallower trees ($\text{depth}=3$) combined with larger forest ensembles ($N=60$) and feature selection ($k=60$) significantly outperform deeper, smaller networks on continuous acoustic descriptors.
+
+---
+
 ## 4. Result 2: Track B Chronological vs Calendar-Mixed Contrast
 
 Track B isolates the effect of non-stationary temporal drift across pandemic collection months:

@@ -9,9 +9,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.feature_selection import RFECV, SelectKBest, SelectPercentile, f_classif, mutual_info_classif
+from sklearn.feature_selection import (
+    RFECV,
+    SelectKBest,
+    SelectPercentile,
+    VarianceThreshold,
+    f_classif,
+    mutual_info_classif,
+)
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
 
 
 class NeuralDecisionTree(nn.Module):
@@ -285,12 +293,12 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
             self.feature_selector_ = selector
             return X_sel
         elif self.feature_selection in ("f_classif", "anova") and k < X.shape[1]:
-            selector = SelectKBest(score_func=f_classif, k=k)
+            selector = make_pipeline(VarianceThreshold(threshold=1e-5), SelectKBest(score_func=f_classif, k=k))
             X_sel = selector.fit_transform(X, y)
             self.feature_selector_ = selector
             return X_sel
         elif self.feature_selection == "mutual_info" and k < X.shape[1]:
-            selector = SelectKBest(score_func=mutual_info_classif, k=k)
+            selector = make_pipeline(VarianceThreshold(threshold=1e-5), SelectKBest(score_func=mutual_info_classif, k=k))
             X_sel = selector.fit_transform(X, y)
             self.feature_selector_ = selector
             return X_sel
