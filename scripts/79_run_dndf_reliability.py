@@ -65,25 +65,52 @@ def main() -> int:
         max_epochs = 2
         batch_size = 16
 
-    feat_path = Path(args.features)
-    if not feat_path.exists():
-        alt_path = Path("D:/BTP/processed/features_compare_is10_merged.csv")
-        if alt_path.exists():
-            feat_path = alt_path
+    # Auto-discover feature file across Google Drive, Kaggle, Local paths
+    candidate_paths = [
+        Path(args.features),
+        Path("/content/drive/MyDrive/BTP/processed/features_compare_is10_merged.csv"),
+        Path("/content/data/processed/features_compare_is10_merged.csv"),
+        Path("/kaggle/input/covid-rars-features/features_compare_is10_merged.csv"),
+        Path("data/processed/features_compare_is10_merged.csv"),
+        Path("D:/BTP/processed/features_compare_is10_merged.csv"),
+    ]
+    feat_path = next((p for p in candidate_paths if p.exists()), None)
+
+    if feat_path is None:
+        if args.smoke_test:
+            logger.info("No real dataset found; generating 60 synthetic samples for preflight smoke-test...")
+            from covid_rars.paper_features import get_paper_193_feature_names
+            synth_cols = get_paper_193_feature_names()
+            synth_rows = []
+            for i in range(60):
+                mod = ["cough", "breath", "speech"][i % 3]
+                lbl = "positive" if i % 2 == 0 else "negative"
+                row = {
+                    "participant_id": f"synth_p_{i // 2}",
+                    "recording_id": f"synth_r_{i}",
+                    "modality": mod,
+                    "label_binary": lbl,
+                    "recording_date": f"2020-05-{1 + (i % 25):02d}",
+                }
+                for c in synth_cols:
+                    row[c] = float(np.random.randn())
+                synth_rows.append(row)
+            features_df = pd.DataFrame(synth_rows)
         else:
-            logger.error(f"Features file not found at: {feat_path}")
+            logger.error(f"Features file not found at any known path: {[str(p) for p in candidate_paths]}")
             return 1
+    else:
+        logger.info(f"Loading features from {feat_path}...")
+        features_df = pd.read_csv(feat_path, low_memory=False)
 
-    logger.info(f"Loading features from {feat_path}...")
-    features_df = pd.read_csv(feat_path, low_memory=False)
-
-    if args.smoke_test:
+    if args.smoke_test and feat_path is not None:
         # Take small subset per modality for fast end-to-end check
         sub_dfs = []
         for m in args.modalities:
             m_sub = features_df[features_df["modality"] == m].head(30)
             sub_dfs.append(m_sub)
-        features_df = pd.concat(sub_dfs, ignore_index=True)
+        if sub_dfs:
+            features_df = pd.concat(sub_dfs, ignore_index=True)
 
     ext_df = None
     ext_path = Path(args.external_features) if args.external_features else None
