@@ -279,7 +279,7 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
         k = self.n_selected_features or min(80, X.shape[1])
         if self.feature_selection == "rfecv_extratrees":
             estimator = ExtraTreesClassifier(
-                n_estimators=50, random_state=self.random_state, n_jobs=-1
+                n_estimators=50, random_state=self.random_state, n_jobs=2
             )
             min_features = self.n_selected_features or max(10, X.shape[1] // 10)
             selector = RFECV(
@@ -288,7 +288,7 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
                 cv=3,
                 scoring="roc_auc",
                 min_features_to_select=min_features,
-                n_jobs=-1,
+                n_jobs=2,
             )
             X_sel = selector.fit_transform(X, y)
             self.feature_selector_ = selector

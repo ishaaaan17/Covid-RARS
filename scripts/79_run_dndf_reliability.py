@@ -101,14 +101,24 @@ def main() -> int:
             return 1
     else:
         logger.info(f"Loading features from {feat_path}...")
-        features_df = pd.read_csv(feat_path, low_memory=False)
+        if args.smoke_test:
+            # Read only 150 rows directly to keep RAM < 10MB
+            features_df = pd.read_csv(feat_path, nrows=150)
+        else:
+            features_df = pd.read_csv(feat_path, low_memory=False)
+            # Downcast numeric columns to float32 to reduce memory footprint by 50%
+            float_cols = features_df.select_dtypes(include=["float64"]).columns
+            features_df[float_cols] = features_df[float_cols].astype(np.float32)
+            import gc
+            gc.collect()
 
     if args.smoke_test and feat_path is not None:
-        # Take small subset per modality for fast end-to-end check
+        # Filter small subset per modality for fast check
         sub_dfs = []
         for m in args.modalities:
-            m_sub = features_df[features_df["modality"] == m].head(30)
-            sub_dfs.append(m_sub)
+            m_sub = features_df[features_df["modality"] == m].head(25)
+            if not m_sub.empty:
+                sub_dfs.append(m_sub)
         if sub_dfs:
             features_df = pd.concat(sub_dfs, ignore_index=True)
 
