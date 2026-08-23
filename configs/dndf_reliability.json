@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "source": {
     "repository": "https://github.com/Rofiquldk1/COVID-19-Detection-from-Cough-Sound",
     "paper": "Robust COVID-19 detection from cough sounds using deep neural decision tree and forest: A comprehensive cross-datasets evaluation",
@@ -10,47 +10,45 @@
   },
   "paths": {
     "coswara_features": "data/processed/features_compare_is10_merged.csv",
-    "coswara_top800_features": "data/processed/features_compare_is10_top800.csv",
     "coughvid_features": "data/processed/features_compare_is10_coughvid_cough_top800.csv",
     "output_directory": "reports/dndf"
   },
   "architecture": {
     "dndt": {
-      "depth": 3,
+      "depth": 11,
       "used_features_rate": 1.0,
       "num_classes": 2,
-      "temperature": 0.8309
+      "temperature": 1.0
     },
     "dndf": {
-      "num_trees": 60,
-      "depth": 3,
-      "used_features_rate": 0.6,
+      "num_trees": 25,
+      "depth": 11,
+      "used_features_rate": 0.8,
       "num_classes": 2,
-      "temperature": 0.8309
+      "temperature": 1.0
     }
   },
   "training": {
-    "learning_rate": 0.00344,
-    "weight_decay": 0.000372,
-    "batch_size": 32,
-    "max_epochs": 60,
-    "patience": 15,
+    "learning_rate": 0.01,
+    "weight_decay": 1e-4,
+    "batch_size": 16,
+    "max_epochs": 14,
+    "patience": 5,
     "use_smote": true,
-    "feature_selection": "f_classif",
-    "n_selected_features": 60,
+    "feature_selection": "rfecv_extratrees",
+    "n_selected_features": 33,
     "optimizer": "adamw",
     "loss": "cross_entropy"
   },
   "experiment": {
-    "name": "dndf_integrated_reliability",
-    "primary_modalities": ["cough", "speech"],
-    "secondary_modalities": ["breath"],
+    "name": "dndf_3track_benchmark_and_reliability",
+    "primary_modalities": ["cough"],
+    "secondary_modalities": ["breath", "speech"],
     "seeds": [1, 2, 5, 12, 40, 52, 72, 2002, 4002, 6002],
-    "protocols": [
-      "track_a_repeated_holdout",
-      "track_b_chronological_early_to_late",
-      "track_b_calendar_mixed",
-      "track_c_external_transfer"
+    "tracks": [
+      "track1_author_exact_reproduction_10fold",
+      "track2_corrected_leak_free_10fold",
+      "track3_clinical_reliability_suite"
     ]
   },
   "fusion": {
@@ -59,11 +57,5 @@
       "dndf": 0.5,
       "comparator": 0.5
     }
-  },
-  "audits": {
-    "calibration_bins": 10,
-    "fixed_sensitivity_target": 0.90,
-    "dca_grid": [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
-    "bootstrap_replicates": 1000
   }
 }
