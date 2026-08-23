@@ -20,6 +20,7 @@ from sklearn.feature_selection import (
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
+from sklearn.metrics import roc_auc_score
 
 
 class NeuralDecisionTree(nn.Module):
@@ -446,7 +447,8 @@ class DNDFClassifier(BaseEstimator, ClassifierMixin):
                 epoch_record["val_loss"] = val_loss
                 
                 # Check for improvement
-                if val_loss < best_loss:
+                is_best = val_loss < best_loss
+                if is_best:
                     best_loss = val_loss
                     best_state = {k: v.cpu().clone() for k, v in self.model_.state_dict().items()}
                     patience_count = 0
