@@ -1,85 +1,56 @@
-# DNDT / DNDF Google Colab Runbook
+# DNDT / DNDF Google Colab & Kaggle 3-Track Runbook
 
-This runbook explains how to execute the Deep Neural Decision Tree (DNDT) and Deep Neural Decision Forest (DNDF) pipeline on **Google Colab** using GPU or CPU acceleration.
-
----
-
-## 1. Quick Start (Colab One-Click)
-
-1. Open **Google Colab** ([colab.research.google.com](https://colab.research.google.com)).
-2. Upload or open [`notebooks/11_DNDT_DNDF_RELIABILITY_E2E.ipynb`](../notebooks/11_DNDT_DNDF_RELIABILITY_E2E.ipynb).
-3. Set Runtime to **GPU** (Menu: `Runtime` -> `Change runtime type` -> `T4 GPU` or `V100`).
-4. Run all cells (`Ctrl + F9` or Menu: `Runtime` -> `Run all`).
+This runbook guides execution of the **Deep Neural Decision Tree (DNDT)** and **Deep Neural Decision Forest (DNDF)** 3-Track Benchmark Suite on Google Colab or Kaggle.
 
 ---
 
-## 2. Command-Line Execution
+## 🚀 1. One-Click Google Colab Execution
 
-If running via terminal or shell in Colab:
+1. Open the interactive notebook directly:  
+   👉 **[11_DNDT_DNDF_RELIABILITY_E2E.ipynb on Google Colab](https://colab.research.google.com/github/ishaaaan17/Covid-RARS/blob/main/notebooks/11_DNDT_DNDF_RELIABILITY_E2E.ipynb)**
+2. Set Runtime to standard **T4 GPU** (Menu: `Runtime` -> `Change runtime type` -> `T4 GPU`).
+3. Run **Section 1, 2, 3** to sync the clean repository and load the features table.
+4. Run **Section 3.5 (Preflight Smoke Test)** to verify all tracks in $<15$ seconds:
+   ```python
+   !python scripts/79_run_dndf_reliability.py --smoke-test --device {device}
+   ```
+5. Execute individual research tracks:
+   * **Cell 4:** **Track 1 (Authors' Exact Paper Reproduction)** -> Replicates Islam et al. (ESWA 2026) 10-fold CV on Cough.
+   * **Cell 5:** **Track 2 (Corrected Leak-Free Reproduction)** -> Evaluates nested 10-fold CV with 0% data leakage.
+   * **Cell 6:** **Track 3 (COVID-RARS Clinical Reliability Suite)** -> Evaluates participant-disjoint holdouts, true temporal drift, and multimodal fusion.
+
+---
+
+## ⚡ 2. Terminal / Command-Line Execution
+
+You can also run individual tracks via the unified CLI script `scripts/79_run_dndf_reliability.py`:
 
 ```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-pip install -e .
+# 1. Fast 15-Second Smoke Test
+python scripts/79_run_dndf_reliability.py --smoke-test --device auto
 
-# 2. Run DNDF reliability study across all tracks with optimized parameters
-python scripts/79_run_dndf_reliability.py \
-    --features data/processed/features_compare_is10_top800.csv \
-    --external-features data/processed/features_compare_is10_coughvid_cough_top800.csv \
-    --num-trees 50 \
-    --depth 5 \
-    --lr 0.005 \
-    --max-epochs 60 \
-    --device auto \
-    --output-dir reports/dndf
+# 2. Run Track 1 (Authors' Exact 10-Fold CV)
+python scripts/79_run_dndf_reliability.py --track 1 --device auto
 
-# 3. Generate comparative publication matrix
-python scripts/80_make_dndf_evidence_pack.py \
-    --dndf-dir reports/dndf \
-    --output-csv reports/tables/dndf_comparative_publication_matrix.csv
+# 3. Run Track 2 (Zero-Leakage Corrected 10-Fold CV)
+python scripts/79_run_dndf_reliability.py --track 2 --device auto
+
+# 4. Run Track 3 (Full Clinical Reliability Suite + Multimodal Fusion)
+python scripts/79_run_dndf_reliability.py --track 3 --device auto
+
+# 5. Run All 3 Tracks Sequentially
+python scripts/79_run_dndf_reliability.py --track all --device auto --output-dir reports/dndf
 ```
 
 ---
 
-## 3. Configuration Customization
+## 📊 3. Output Artifacts Generated
 
-Modify hyperparameters in [`configs/dndf_reliability.json`](../configs/dndf_reliability.json):
+Results are exported to `reports/dndf/`:
 
-```json
-{
-  "architecture": {
-    "dndt": {
-      "depth": 5,
-      "used_features_rate": 1.0,
-      "temperature": 1.0
-    },
-    "dndf": {
-      "num_trees": 50,
-      "depth": 5,
-      "used_features_rate": 0.7,
-      "temperature": 1.0
-    }
-  },
-  "training": {
-    "learning_rate": 0.005,
-    "batch_size": 32,
-    "max_epochs": 60,
-    "patience": 15,
-    "use_smote": true,
-    "feature_selection": "f_classif",
-    "n_selected_features": 80
-  }
-}
-```
-
----
-
-## 4. Key Output Artifacts
-
-| Output File | Content |
+| Artifact File | Description |
 |---|---|
-| `reports/dndf/dndf_final_validation_summary.csv` | Summary metrics across Track A, Track B, Track C, and Multimodal Fusion. |
-| `reports/dndf/dndf_calibration_summary.csv` | ECE, Brier score, and NLL before/after shift. |
-| `reports/dndf/dndf_operating_points.csv` | Specificity and PPV at fixed $\ge 90\%$ screening sensitivity. |
-| `reports/dndf/dndf_decision_curves.csv` | Net clinical benefit across threshold probabilities ($0.05 - 0.50$). |
-| `reports/dndf/dndf_bootstrap_ci.csv` | 95% bootstrap confidence intervals for all evaluated configurations. |
+| `track1_author_paper_reproduction.csv` | Fold-by-fold accuracy, AUROC, sensitivity, specificity, and precision matching Islam et al. (ESWA 2026). |
+| `track2_corrected_leak_free_reproduction.csv` | Methodologically audited fold metrics with zero data leakage. |
+| `dndf_final_validation_summary.csv` | Participant-disjoint Track 3 metrics across unimodal and multimodal combinations. |
+| `dndf_calibration_summary.csv` | Expected Calibration Error (ECE) and Brier calibration scores. |

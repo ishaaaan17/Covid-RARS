@@ -92,6 +92,19 @@ This document maintains the comprehensive canonical ledger of all **core methodo
 
 ---
 
+### 9. Test-Split Leakage & Published Paper Configuration Parity
+* **The Logical Challenge:**  
+  Benchmarking against published studies (e.g. Islam et al., ESWA 2026) requires exact hyperparameter and feature matching, while avoiding common evaluation traps like using test splits for threshold tuning or early stopping.
+* **The Core Consequence:**  
+  Using different feature sets (800 ComParE vs. 193 Librosa) or arbitrary tree depths (depth 5 vs. depth 11) prevents true scientific replication, while threshold optimization on test sets causes data leakage.
+* **COVID-RARS Resolution:**  
+  - Decoupled evaluation into **3 transparent tracks**:
+    * **Track 1:** Exact 10-Fold CV replication matching the author's exact parameters (193 features $\to$ 33 RFECV, 25 trees, depth 11, lr 0.01, 14 epochs).
+    * **Track 2:** Methodologically corrected nested CV with zero data leakage (feature selection and threshold tuning strictly isolated from outer test folds).
+    * **Track 3:** COVID-RARS clinical reliability suite (participant-disjoint holdouts, true temporal drift, and tripartite multimodal fusion).
+
+---
+
 ## 🛠️ Part 2: Runtime, Infrastructure & Execution Issues
 
 | # | Component | Symptom / Error | Root Cause | Status & Resolution |
