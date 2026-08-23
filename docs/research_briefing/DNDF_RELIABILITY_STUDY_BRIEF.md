@@ -47,6 +47,23 @@ This track faithfully reproduces the exact experimental pipeline and configurati
   * Data Balancing: **SMOTE** (Synthetic Minority Over-sampling Technique) on training folds.
 * **Evaluation Protocol:** **10-Fold Stratified Cross-Validation** (recording-level partitioning matching author's repo).
 
+### Final Empirical 10-Fold Reproduction Results on Coswara Cough:
+| Fold | Overall Accuracy | ROC-AUC (AUROC) | Balanced Accuracy | Sensitivity / Recall | Specificity | Precision | F1-Score |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Fold 01** | `77.32%` | `0.7947` | `74.81%` | `67.67%` | `81.95%` | `62.50%` | `0.6498` |
+| **Fold 02** | `78.29%` | `0.8346` | `74.47%` | `63.43%` | `85.51%` | `68.00%` | `0.6564` |
+| **Fold 03** | `77.80%` | **`0.8607`** ⭐ | **`77.95%`** | **`78.36%`** | `77.54%` | `63.64%` | `0.7023` |
+| **Fold 04** | `73.90%` | `0.7700` | `72.17%` | `67.16%` | `77.17%` | `58.06%` | `0.6228` |
+| **Fold 05** | `76.28%` | `0.8066` | `75.03%` | `71.43%` | `78.62%` | `61.15%` | `0.6589` |
+| **Fold 06** | `68.22%` | `0.7756` | `70.61%` | `77.44%` | `63.77%` | `50.74%` | `0.6131` |
+| **Fold 07** | `71.15%` | `0.7331` | `69.47%` | `64.66%` | `74.28%` | `53.42%` | `0.5850` |
+| **Fold 08** | `74.08%` | `0.7435` | `69.31%` | `55.64%` | `82.97%` | `61.16%` | `0.5827` |
+| **Fold 09** | `73.59%` | `0.7776` | `71.86%` | `66.92%` | `76.81%` | `57.05%` | `0.6159` |
+| **Fold 10** | `68.46%` | `0.7365` | `67.67%` | `65.41%` | `69.93%` | `50.00%` | `0.5668` |
+| **Mean ± Std** | **`73.91% ± 3.67%`** | **`0.7833 ± 0.0420`** | **`72.33% ± 3.19%`** | **`67.81% ± 6.68%`** | **`76.85% ± 6.39%`** | **`59.17% ± 5.61%`** | **`0.6288 ± 0.0397`** |
+
+* **Key Takeaway:** Confirms robust replication of Islam et al. (ESWA 2026) on Coswara cough data. DNDF achieves a peak individual fold AUROC of **`0.8607`** and an overall 10-fold mean of **`0.7833`**, representing a **$+0.274$ AUROC gain** over untuned single decision trees.
+
 ---
 
 ## 3. Track 2: Methodologically Corrected Leak-Free Reproduction
