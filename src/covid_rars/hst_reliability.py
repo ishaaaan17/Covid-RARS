@@ -787,16 +787,38 @@ class HSTPipeline:
             try:
                 drive_backup = Path("/content/drive/MyDrive/Covid-RARS_Runs")
                 if Path("/content/drive/MyDrive").exists():
+                    import shutil
                     drive_target = drive_backup / self.run_id / "runtime" / "stages" / receipt_path.name
                     drive_target.parent.mkdir(parents=True, exist_ok=True)
-                    import shutil
                     shutil.copy2(receipt_path, drive_target)
+
+                    global_stage = drive_backup / "stages" / receipt_path.name
+                    global_stage.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(receipt_path, global_stage)
+
                     for out_p in output_paths:
                         p_obj = Path(out_p)
                         if p_obj.is_file() and p_obj.is_relative_to(self.run_root):
                             out_target = drive_backup / self.run_id / p_obj.relative_to(self.run_root)
                             out_target.parent.mkdir(parents=True, exist_ok=True)
                             shutil.copy2(p_obj, out_target)
+
+                    if stage == "checkpoint":
+                        cp_dir = self.config.workspace_root / ".cache" / "hst" / "checkpoints"
+                        if cp_dir.exists():
+                            for cp_file in cp_dir.glob("*.pth"):
+                                target_cp = drive_backup / "checkpoints" / cp_file.name
+                                target_cp.parent.mkdir(parents=True, exist_ok=True)
+                                if not target_cp.exists():
+                                    shutil.copy2(cp_file, target_cp)
+
+                    if stage == "manifests":
+                        mf_dir = self.config.workspace_root / "data" / "processed" / "manifests"
+                        if mf_dir.exists():
+                            for mf_file in mf_dir.glob("*.csv"):
+                                target_mf = drive_backup / "manifests" / mf_file.name
+                                target_mf.parent.mkdir(parents=True, exist_ok=True)
+                                shutil.copy2(mf_file, target_mf)
             except Exception:
                 pass
             return receipt

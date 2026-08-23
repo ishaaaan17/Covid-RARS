@@ -249,6 +249,30 @@ def ensure_data_inputs(project_root: Path) -> None:
         if target_metadata.is_file() and not target_metadata.is_symlink():
             break
 
+    try:
+        drive_backup = Path("/content/drive/MyDrive/Covid-RARS_Runs")
+        if drive_backup.exists():
+            import shutil
+            drive_cps = drive_backup / "checkpoints"
+            if drive_cps.exists():
+                local_cps = project_root / ".cache" / "hst" / "checkpoints"
+                local_cps.mkdir(parents=True, exist_ok=True)
+                for cp in drive_cps.glob("*.pth"):
+                    dest = local_cps / cp.name
+                    if not dest.exists():
+                        shutil.copy2(cp, dest)
+
+            drive_mfs = drive_backup / "manifests"
+            if drive_mfs.exists():
+                local_mfs = project_root / "data" / "processed" / "manifests"
+                local_mfs.mkdir(parents=True, exist_ok=True)
+                for mf in drive_mfs.glob("*.csv"):
+                    dest = local_mfs / mf.name
+                    if not dest.exists():
+                        shutil.copy2(mf, dest)
+    except Exception:
+        pass
+
 
 def main() -> None:
     args = parse_args()
