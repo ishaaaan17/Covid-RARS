@@ -76,6 +76,29 @@ While Track 1 proves replication against the author's published code, Track 2 co
 3. **Strictly Untouched Test Folds:** Outer 10% test folds are evaluated *once* with frozen weights, frozen feature selectors, and frozen thresholds.
 4. **Fresh Reinitialization:** Neural weights and optimizers are completely reinitialized per fold to prevent weight leakage across CV splits.
 
+### Final Empirical 10-Fold Leakage-Free Results on Coswara Cough:
+| Fold | Overall Accuracy | ROC-AUC (AUROC) | Balanced Accuracy | Sensitivity / Recall | Specificity | Precision | F1-Score |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Fold 01** | `69.27%` | `0.7388` | `67.48%` | `62.41%` | `72.56%` | `51.88%` | `0.5665` |
+| **Fold 02** | `68.78%` | **`0.8328`** ⭐ | **`72.97%`** | **`85.07%`** | `60.87%` | `50.00%` | `0.6300` |
+| **Fold 03** | `68.78%` | `0.7945` | `70.67%` | `76.12%` | `65.22%` | `51.78%` | `0.6163` |
+| **Fold 04** | `72.68%` | `0.7577` | `70.30%` | `63.43%` | `77.17%` | `57.43%` | `0.6028` |
+| **Fold 05** | `67.73%` | `0.7631` | `67.52%` | `66.92%` | `68.12%` | `49.44%` | `0.5687` |
+| **Fold 06** | **`75.06%`** | `0.7923` | `69.25%` | `52.63%` | **`85.87%`** | **`63.64%`** | `0.5761` |
+| **Fold 07** | `68.22%` | `0.7038` | `64.76%` | `54.89%` | `74.64%` | `51.05%` | `0.5290` |
+| **Fold 08** | `71.15%` | `0.7371` | `67.52%` | `57.14%` | `77.90%` | `55.07%` | `0.5609` |
+| **Fold 09** | **`75.06%`** | **`0.8192`** ⭐ | **`73.54%`** | `69.17%` | `77.90%` | `60.13%` | **`0.6434`** |
+| **Fold 10** | `70.17%` | `0.7389` | `67.58%` | `60.15%` | `75.00%` | `53.33%` | `0.5654` |
+| **Mean ± Std** | **`70.69% ± 2.73%`** | **`0.7678 ± 0.0409`** | **`69.16% ± 2.73%`** | **`64.79% ± 9.98%`** | **`73.52% ± 7.20%`** | **`54.73% ± 4.59%`** | **`0.5882 ± 0.0364`** |
+
+### 🔍 Comparative Scientific Analysis (Track 1 vs Track 2):
+| Metric | Track 1 (Authors' Exact Setup) | Track 2 (Corrected Leak-Free Nested CV) | Difference ($\Delta$) | Methodological Interpretation |
+|---|:---:|:---:|:---:|---|
+| **AUROC** | **`0.7833 ± 0.0420`** | **`0.7678 ± 0.0409`** | **`-0.0155`** | **Remarkably stable ranking:** DNDF loses only $1.5\%$ AUROC when outer test splits are 100% unseen, confirming genuine non-linear separation! |
+| **Accuracy** | **`73.91% ± 3.67%`** | **`70.69% ± 2.73%`** | **`-3.22%`** | Quantifies the optimistic threshold bias in published literature. |
+| **Balanced Accuracy** | **`72.33% ± 3.19%`** | **`69.16% ± 2.73%`** | **`-3.17%`** | Highly consistent diagnostic performance across imbalanced test folds. |
+| **Peak Single Fold** | **`0.8607`** (Fold 3) | **`0.8328`** (Fold 2) | **`-0.0279`** | Peak fold performance remains solidly $> 0.83$ AUROC. |
+
 ---
 
 ## 4. Track 3: COVID-RARS Clinical Reliability Suite
