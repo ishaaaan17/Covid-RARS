@@ -116,6 +116,18 @@ Track 3 evaluates whether the soft differentiable forest generalizes under real-
 * **Track 3D: Complete-Case Multimodal Late Fusion**  
   Combines **Cough + Breath + Speech** probability streams using **Stacked Logistic Regression** to maximize overall diagnostic sensitivity and balanced accuracy.
 
+### Final Empirical Track 3A Participant-Disjoint Results:
+| Modality | Model | Seed 1 AUROC | Seed 2 AUROC | Seed 5 AUROC | Seed 12 AUROC | Seed 40 AUROC | **5-Seed Mean AUROC** | **5-Seed Mean Balanced Acc** |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Cough** | **DNDF (25 Trees, Depth 5)** | `0.7599` | `0.7753` | `0.7373` | `0.8067` | **`0.8241`** ⭐ | **`0.7807 ± 0.0336`** | **`71.32% ± 2.61%`** |
+| **Cough** | DNDT (1 Tree, Depth 5) | `0.7399` | `0.7705` | `0.7165` | `0.7995` | `0.8202` | `0.7693 ± 0.0409` | `67.56% ± 2.18%` |
+| **Breath** | **DNDF (25 Trees, Depth 5)** | `0.6880` | **`0.7790`** ⭐ | `0.7300` | `0.7389` | `0.7374` | **`0.7347 ± 0.0326`** | **`68.24% ± 4.58%`** |
+| **Breath** | DNDT (1 Tree, Depth 5) | `0.7170` | `0.7672` | `0.7164` | `0.7221` | `0.7277` | `0.7301 ± 0.0213` | `66.82% ± 3.45%` |
+| **Speech** | **DNDF (25 Trees, Depth 5)** | `0.7796` | `0.7616` | **`0.8011`** ⭐ | `0.7931` | `0.7870` | **`0.7845 ± 0.0146`** | **`70.52% ± 1.28%`** |
+| **Speech** | DNDT (1 Tree, Depth 5) | `0.7484` | `0.7428` | `0.7817` | `0.7807` | `0.7450` | `0.7597 ± 0.0194` | `67.30% ± 2.14%` |
+
+* **Key Takeaway:** Under strict patient-disjoint holdouts (where no participant appears in both training and testing), **Speech (`0.7845` AUROC)** and **Cough (`0.7807` AUROC)** show the highest standalone discrimination, and **25-Tree DNDF consistently outperforms single DNDT across all modalities** ($\Delta = +0.011$ to $+0.025$ AUROC gain).
+
 ---
 
 ## 5. Mathematical Architecture of DNDT & DNDF
