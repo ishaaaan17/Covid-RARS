@@ -1,0 +1,6 @@
+track,protocol,modality,mean_auroc,std_auroc,peak_auroc,mean_accuracy,mean_bacc,sensitivity,specificity,precision,f1_score
+Track 1: Authors' Exact Paper Reproduction,10-Fold Stratified Recording CV,Cough,0.7833,0.042,0.8607,0.7391,0.7233,0.6781,0.7685,0.5917,0.6288
+Track 2: Corrected Leak-Free Reproduction,Nested 10-Fold CV (Zero Leakage),Cough,0.7678,0.0409,0.8328,0.7069,0.6916,0.6479,0.7352,0.5473,0.5882
+Track 3A: Clinical Reliability Suite,5 Repeated Participant Holdouts,Cough,0.7807,0.0336,0.8241,0.735,0.7132,0.674,0.784,0.58,0.623
+Track 3A: Clinical Reliability Suite,5 Repeated Participant Holdouts,Speech,0.7845,0.0146,0.8011,0.731,0.7052,0.658,0.814,0.612,0.634
+Track 3A: Clinical Reliability Suite,5 Repeated Participant Holdouts,Breath,0.7347,0.0326,0.779,0.698,0.6824,0.742,0.687,0.534,0.621

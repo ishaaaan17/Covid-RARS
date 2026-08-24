@@ -1,0 +1,7 @@
+modality,model,seed_1_auroc,seed_2_auroc,seed_5_auroc,seed_12_auroc,seed_40_auroc,mean_auroc,std_auroc,mean_bacc
+cough,dndf_trees25_depth5,0.7599,0.7753,0.7373,0.8067,0.8241,0.7807,0.0336,0.7132
+cough,dndt_depth5,0.7399,0.7705,0.7165,0.7995,0.8202,0.7693,0.0409,0.6756
+breath,dndf_trees25_depth5,0.688,0.779,0.73,0.7389,0.7374,0.7347,0.0326,0.6824
+breath,dndt_depth5,0.717,0.7672,0.7164,0.7221,0.7277,0.7301,0.0213,0.6682
+speech,dndf_trees25_depth5,0.7796,0.7616,0.8011,0.7931,0.787,0.7845,0.0146,0.7052
+speech,dndt_depth5,0.7484,0.7428,0.7817,0.7807,0.745,0.7597,0.0194,0.673
