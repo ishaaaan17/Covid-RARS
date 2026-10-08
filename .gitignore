@@ -6,6 +6,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .venv/
+.venv-dndt-dndf/
 venv/
 env/
 
@@ -28,6 +29,7 @@ temp/
 archive/local_state/
 
 # Local datasets and generated experiment output
+configs/*.local.json
 /data/raw/
 /data/interim/
 /data/processed/
@@ -97,3 +99,6 @@ manuscripts/**/tmp/
 manuscripts/**/*_preview.png
 manuscripts/**/*_extracted.txt
 manuscripts/**/iatmsi_text.txt
+
+# Manuscript working tree is maintained locally, outside version control
+/manuscripts/
